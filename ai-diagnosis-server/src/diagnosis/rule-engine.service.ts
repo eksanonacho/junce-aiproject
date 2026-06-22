@@ -55,7 +55,10 @@ export class RuleEngineService {
   /**
    * Main entry: load active rules, match against answers, return matched rules.
    */
-  async evaluate(answers: { questionId: number; answerValue: unknown }[]) {
+  async evaluate(answers: { questionId: number; answerValue: unknown }[]): Promise<{
+    matchedRules: RuleRecord[];
+    hasActiveRules: boolean;
+  }> {
     // 1. Load active rules
     const rules = await this.prisma.diagnosisRule.findMany({
       where: { isActive: true },
@@ -73,7 +76,7 @@ export class RuleEngineService {
       }
     }
 
-    return matched;
+    return { matchedRules: matched, hasActiveRules: rules.length > 0 };
   }
 
   // -------------------------------------

@@ -35,39 +35,24 @@ async function main() {
   });
   console.log(`  ✅ Questionnaire: ${q.title}`);
 
-  // --- 3. Questions (10 个示例) ---
-  const questions = await Promise.all([
-    prisma.question.create({
-      data: { questionnaireId: q.id, groupLabel: '企业基础信息', groupOrder: 1, orderInGroup: 1, questionText: '贵公司所属行业？', questionType: 'SINGLE_CHOICE', options: ['互联网', '贸易', '餐饮', '建筑', '运输', '制造', '其他'], isRequired: true, riskDimension: '工商维度' },
-    }),
-    prisma.question.create({
-      data: { questionnaireId: q.id, groupLabel: '企业基础信息', groupOrder: 1, orderInGroup: 2, questionText: '公司注册时间？', questionType: 'SINGLE_CHOICE', options: ['不到1年', '1-3年', '3-5年', '5年以上'], isRequired: true, riskDimension: '工商维度' },
-    }),
-    prisma.question.create({
-      data: { questionnaireId: q.id, groupLabel: '企业基础信息', groupOrder: 1, orderInGroup: 3, questionText: '公司类型？', questionType: 'SINGLE_CHOICE', options: ['一人公司', '多股东', '个体户'], isRequired: true, riskDimension: '工商维度' },
-    }),
-    prisma.question.create({
-      data: { questionnaireId: q.id, groupLabel: '经营规模', groupOrder: 2, orderInGroup: 1, questionText: '年流水大约多少？', questionType: 'RANGE', options: { options: ['10万以下', '10-50万', '50-100万', '100-500万', '500万以上'] }, isRequired: true, riskDimension: '税务维度' },
-    }),
-    prisma.question.create({
-      data: { questionnaireId: q.id, groupLabel: '经营规模', groupOrder: 2, orderInGroup: 2, questionText: '公司员工人数？', questionType: 'SINGLE_CHOICE', options: ['0人（无员工）', '1-5人', '5-10人', '10-50人', '50人以上'], isRequired: true, riskDimension: '社保维度' },
-    }),
-    prisma.question.create({
-      data: { questionnaireId: q.id, groupLabel: '税务申报', groupOrder: 3, orderInGroup: 1, questionText: '目前是否正常报税？', questionType: 'YES_NO', options: ['是', '否'], isRequired: true, riskDimension: '税务维度' },
-    }),
-    prisma.question.create({
-      data: { questionnaireId: q.id, groupLabel: '税务申报', groupOrder: 3, orderInGroup: 2, questionText: '是否长期零申报？', questionType: 'YES_NO', options: ['是', '否'], isRequired: false, riskDimension: '税务维度' },
-    }),
-    prisma.question.create({
-      data: { questionnaireId: q.id, groupLabel: '社保/员工', groupOrder: 4, orderInGroup: 1, questionText: '是否给员工缴纳社保？', questionType: 'YES_NO', options: ['是', '否', '无员工'], isRequired: true, riskDimension: '社保维度' },
-    }),
-    prisma.question.create({
-      data: { questionnaireId: q.id, groupLabel: '资金/账户', groupOrder: 5, orderInGroup: 1, questionText: '是否已开设对公账户？', questionType: 'YES_NO', options: ['是', '否'], isRequired: true, riskDimension: '资金维度' },
-    }),
-    prisma.question.create({
-      data: { questionnaireId: q.id, groupLabel: '资金/账户', groupOrder: 5, orderInGroup: 2, questionText: '是否存在老板个人账户收公司款项的情况？', questionType: 'YES_NO', options: ['是', '否', '不清楚'], isRequired: false, riskDimension: '资金维度' },
-    }),
-  ]);
+  // --- 3. Questions (10 个示例，顺序创建保证 ID 可预测) ---
+  const questionDefs = [
+    { groupLabel: '企业基础信息', groupOrder: 1, orderInGroup: 1, questionText: '贵公司所属行业？', questionType: 'SINGLE_CHOICE' as const, options: ['互联网', '贸易', '餐饮', '建筑', '运输', '制造', '其他'], isRequired: true, riskDimension: '工商维度' },
+    { groupLabel: '企业基础信息', groupOrder: 1, orderInGroup: 2, questionText: '公司注册时间？', questionType: 'SINGLE_CHOICE' as const, options: ['不到1年', '1-3年', '3-5年', '5年以上'], isRequired: true, riskDimension: '工商维度' },
+    { groupLabel: '企业基础信息', groupOrder: 1, orderInGroup: 3, questionText: '公司类型？', questionType: 'SINGLE_CHOICE' as const, options: ['一人公司', '多股东', '个体户'], isRequired: true, riskDimension: '工商维度' },
+    { groupLabel: '经营规模', groupOrder: 2, orderInGroup: 1, questionText: '年流水大约多少？', questionType: 'RANGE' as const, options: { options: ['10万以下', '10-50万', '50-100万', '100-500万', '500万以上'] }, isRequired: true, riskDimension: '税务维度' },
+    { groupLabel: '经营规模', groupOrder: 2, orderInGroup: 2, questionText: '公司员工人数？', questionType: 'SINGLE_CHOICE' as const, options: ['0人（无员工）', '1-5人', '5-10人', '10-50人', '50人以上'], isRequired: true, riskDimension: '社保维度' },
+    { groupLabel: '税务申报', groupOrder: 3, orderInGroup: 1, questionText: '目前是否正常报税？', questionType: 'YES_NO' as const, options: ['是', '否'], isRequired: true, riskDimension: '税务维度' },
+    { groupLabel: '税务申报', groupOrder: 3, orderInGroup: 2, questionText: '是否长期零申报？', questionType: 'YES_NO' as const, options: ['是', '否'], isRequired: false, riskDimension: '税务维度' },
+    { groupLabel: '社保/员工', groupOrder: 4, orderInGroup: 1, questionText: '是否给员工缴纳社保？', questionType: 'YES_NO' as const, options: ['是', '否', '无员工'], isRequired: true, riskDimension: '社保维度' },
+    { groupLabel: '资金/账户', groupOrder: 5, orderInGroup: 1, questionText: '是否已开设对公账户？', questionType: 'YES_NO' as const, options: ['是', '否'], isRequired: true, riskDimension: '资金维度' },
+    { groupLabel: '资金/账户', groupOrder: 5, orderInGroup: 2, questionText: '是否存在老板个人账户收公司款项的情况？', questionType: 'YES_NO' as const, options: ['是', '否', '不清楚'], isRequired: false, riskDimension: '资金维度' },
+  ];
+  const questions = [];
+  for (const def of questionDefs) {
+    const created = await prisma.question.create({ data: { questionnaireId: q.id, ...def } });
+    questions.push(created);
+  }
   console.log(`  ✅ Questions: ${questions.length} created`);
 
   // --- 4. DiagnosisRules (3 条示例) ---
@@ -109,9 +94,34 @@ async function main() {
         needReview: true,
         recommendServices: ['开户', '财务外包', '合规项目'],
       },
+      // TODO: 测试占位规则，用于验证 "3 MEDIUM → HIGH" 叠加升级场景，待纪姐确认后替换
+      {
+        ruleCode: 'TEST_M001',
+        dimension: '工商维度',
+        questionId: questions[1].id, // "公司注册时间？"
+        triggerCondition: { operator: 'equals', value: '不到1年' },
+        riskLevel: 'MEDIUM',
+        riskTitle: '[测试]新注册公司',
+        riskDescription: '新注册公司需要关注初期合规建设。',
+        suggestion: '建议尽快开立对公账户并建立账务体系。',
+        needReview: false,
+        recommendServices: ['开户', '代理记账'],
+      },
+      {
+        ruleCode: 'TEST_M002',
+        dimension: '社保维度',
+        questionId: questions[8].id, // "是否给员工缴纳社保？"
+        triggerCondition: { operator: 'equals', value: '否' },
+        riskLevel: 'MEDIUM',
+        riskTitle: '[测试]未缴纳社保',
+        riskDescription: '有员工但未依法缴纳社保可能存在用工合规风险。',
+        suggestion: '建议依法为员工缴纳社保，规范用工管理。',
+        needReview: false,
+        recommendServices: ['社保', '合规项目'],
+      },
     ],
   });
-  console.log('  ✅ DiagnosisRules: 3 created');
+  console.log('  ✅ DiagnosisRules: 5 created (3 business + 2 test placeholders)');
 
   // --- 5. RiskScenarios (3 条示例) ---
   await prisma.riskScenario.createMany({

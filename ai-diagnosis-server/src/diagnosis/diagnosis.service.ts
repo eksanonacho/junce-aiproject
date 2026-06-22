@@ -45,14 +45,14 @@ export class DiagnosisService {
         questionId: a.questionId,
         answerValue: a.answerValue,
       }));
-      const matchedRules = await this.ruleEngine.evaluate(answerInput);
+      const { matchedRules, hasActiveRules } = await this.ruleEngine.evaluate(answerInput);
 
-      // 2. Calculate risk level
+      // 2. Calculate risk level（传入 hasActiveRules 用于区分 LOW / UNKNOWN）
       const findingsInput = matchedRules.map((r) => ({
         riskLevel: r.riskLevel,
         needReview: r.needReview,
       }));
-      const riskResult = this.riskLevel.calculate(findingsInput);
+      const riskResult = this.riskLevel.calculate(findingsInput, { hasActiveRules });
 
       // 3. Build recommendations
       const recs = this.serviceRec.build(matchedRules);

@@ -4,6 +4,59 @@
 
 ---
 
+## 2026-06-22 第9步：Phase 2.1 — 修复无风险场景基线逻辑 + 固化测试规则
+
+### P0 问题
+
+Phase 2 完成后发现：无风险场景（规则正常加载但 0 命中）返回 `UNKNOWN + needReview=true`，这不对。
+
+正确逻辑：规则引擎正常工作 + 所有答案通过检查 + 0 命中 → **LOW + needReview=false**（系统成功评估，未发现风险）。
+
+UNKNOWN 只能用于：没有活跃规则、答案矛盾、信息不足等**无法判断**的场景。
+
+### 修复内容
+
+**risk-level.service.ts**：
+- `findings.length === 0` 分支：从 `UNKNOWN + needReview=true` 改为 `LOW + needReview=false`
+- 新增 `context.hasActiveRules` 参数：当 0 findings + 没有活跃规则时，才返回 UNKNOWN
+- MEDIUM 区域的 needReview 修正：1-2 个 MEDIUM 不强制复核（3 个已升级为 HIGH）
+
+**rule-engine.service.ts**：
+- `evaluate()` 返回值从 `RuleRecord[]` 改为 `{matchedRules, hasActiveRules}`
+- 支持区分"评估后无风险"和"无法评估"
+
+**diagnosis.service.ts**：
+- 适配新的 `evaluate()` 返回结构，传递 `hasActiveRules` 给 risk-level service
+
+### 种子数据修复
+
+**问题**：`Promise.all` 并行创建 question，导致 ID 顺序不可预测。seed 多次运行后产生重复数据。
+
+**修复**：
+- 改为 `for...of` 顺序创建，保证 `questions[0]` ↔ `id=N`, `questions[1]` ↔ `id=N+1` ...
+- TEST_M001、TEST_M002 固化到 seed.ts，标注 `TODO: 测试占位规则，待纪姐确认后替换`
+- 不再依赖手动 SQL 插入
+
+### LOW 和 UNKNOWN 的区别
+
+| 条件 | 结果 | needReview |
+|---|---|---|
+| 规则正常加载 + 0 命中 | LOW | false |
+| 没有活跃规则 | UNKNOWN | true |
+| 答案矛盾/信息不足 | UNKNOWN（预留）| true |
+
+### 5 组测试结果（全部通过）
+
+| # | 场景 | overallRisk | needReview | Findings |
+|---|---|---|---|---|
+| 1 | 无风险 | **LOW** ✅ | **false** ✅ | 0 |
+| 2 | 中风险 | MEDIUM | false | 1 |
+| 3 | 高风险A | HIGH | true | 1 |
+| 4 | 高风险B | HIGH | true | 1 |
+| 5 | 3MED升级 | HIGH | true | 3 |
+
+---
+
 ## 2026-06-22 第8步：Phase 2 — AI 初诊规则引擎
 
 ### 做了什么
