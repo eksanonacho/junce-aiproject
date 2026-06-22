@@ -41,6 +41,9 @@ export interface SubmitResponse {
   submissionPublicId: string;
   status: string;
   diagnosisStatus?: string;
+  reportStatus?: string;
+  reportPublicId?: string;
+  reportAccessToken?: string;
   message: string;
 }
 
@@ -48,4 +51,43 @@ export interface ApiError {
   code: string;
   message: string;
   details?: { questionId: number; text: string; reason?: string }[];
+}
+
+// 报告相关类型
+
+export interface ReportStatus {
+  reportPublicId: string;
+  reportNumber?: string;
+  title?: string;
+  riskLevel: string;
+  reviewStatus: string;
+  customerVisible: boolean;
+  generatedAt?: string;
+}
+
+export interface ReportDetail {
+  reportPublicId: string;
+  reportNumber?: string;
+  title?: string;
+  riskLevel: string;
+  reviewStatus: string;
+  customerVisible: boolean;
+  generatedAt?: string;
+  companyProfile?: Record<string, string>;
+  summary?: string;
+  findings?: Array<{
+    riskLevel: string;
+    title: string;
+    description: string;
+    suggestion: string;
+    recommendServices?: unknown;
+  }>;
+  recommendations?: Array<{
+    serviceType: string;
+    reason: string;
+    priority: string;
+  }>;
+  disclaimer?: string;
+  htmlContent?: string;
+  message?: string;
 }

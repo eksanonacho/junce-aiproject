@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DiagnosisService } from '../diagnosis/diagnosis.service';
+import { ReportService } from '../report/report.service';
 import { SubmitQuestionnaireDto, SubmitAnswerDto } from './dto/submit-questionnaire.dto';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class SubmissionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly diagnosisService: DiagnosisService,
+    private readonly reportService: ReportService,
   ) {}
 
   async submit(dto: SubmitQuestionnaireDto) {
@@ -112,26 +114,43 @@ export class SubmissionService {
     });
 
     let diagnosisStatus = 'NOT_RUN';
-    // 8. Auto-trigger diagnosis (non-blocking: submission succeeds even if diagnosis fails)
+    let reportStatus = 'NOT_RUN';
+    let reportPublicId: string | undefined;
+    let reportAccessToken: string | undefined;
+
+    // 8. Auto-trigger diagnosis
     try {
-      const diagResult = await this.diagnosisService.runDiagnosis(submission.publicId);
+      await this.diagnosisService.runDiagnosis(submission.publicId);
       diagnosisStatus = 'COMPLETED';
-      return {
-        submissionPublicId: submission.publicId,
-        status: 'SUBMITTED',
-        diagnosisStatus,
-        message: '提交成功，诊断已完成',
-      };
+
+      // 9. Auto-generate report
+      try {
+        const reportResult = await this.reportService.generateReport(submission.publicId);
+        reportStatus = 'READY';
+        reportPublicId = reportResult.reportPublicId;
+        reportAccessToken = reportResult.reportAccessToken;
+      } catch (reportErr: unknown) {
+        this.logger.error(`Report generation failed for ${submission.publicId}: ${(reportErr as Error).message}`);
+        reportStatus = 'FAILED';
+      }
     } catch (err: unknown) {
       this.logger.error(`Diagnosis failed for ${submission.publicId}: ${(err as Error).message}`);
       diagnosisStatus = 'FAILED';
-      return {
-        submissionPublicId: submission.publicId,
-        status: 'SUBMITTED',
-        diagnosisStatus,
-        message: '提交成功，但诊断失败，请联系管理员',
-      };
     }
+
+    return {
+      submissionPublicId: submission.publicId,
+      status: 'SUBMITTED',
+      diagnosisStatus,
+      reportStatus,
+      reportPublicId,
+      reportAccessToken,
+      message: diagnosisStatus === 'COMPLETED' && reportStatus === 'READY'
+        ? '提交成功，报告已生成'
+        : diagnosisStatus === 'COMPLETED'
+          ? '提交成功，诊断已完成但报告生成失败'
+          : '提交成功',
+    };
   }
 
   private validateAnswerValue(

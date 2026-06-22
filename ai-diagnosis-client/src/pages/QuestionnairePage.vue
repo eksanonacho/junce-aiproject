@@ -104,7 +104,14 @@ async function handleSubmit() {
       phone: phone.value || undefined,
       answers: allAnswers,
     });
-    router.push(`/questionnaire/success?submissionPublicId=${result.submissionPublicId}&diagnosisStatus=${result.diagnosisStatus || 'NOT_RUN'}`);
+    const params = new URLSearchParams({
+      submissionPublicId: result.submissionPublicId,
+      diagnosisStatus: result.diagnosisStatus || 'NOT_RUN',
+      reportStatus: result.reportStatus || 'NOT_RUN',
+    });
+    if (result.reportPublicId) params.set('reportPublicId', result.reportPublicId);
+    if (result.reportAccessToken) params.set('reportAccessToken', result.reportAccessToken);
+    router.push(`/questionnaire/success?${params.toString()}`);
   } catch (e: unknown) {
     submitError.value = (e as { message?: string }).message || '提交失败，请重试';
   } finally {
