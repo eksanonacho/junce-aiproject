@@ -4,6 +4,51 @@
 
 ---
 
+## 2026-06-22 第11步：Phase 5 — 轻量打印方案、Docker 部署与全量冒烟
+
+### 做了什么
+
+1. **打印/保存 PDF**：报告页增加打印按钮，`window.print()` + print CSS（隐藏按钮、保留报告内容、适配 A4、免责声明强制打印）
+2. **Dockerfile ×2**：server（node:22-alpine 多阶段构建）+ client（Vite build + nginx serve）
+3. **docker-compose**：postgres(5433) + server(3001) + client(8081)，端口不与小程序冲突
+4. **环境变量标准化**：.env.example ×3（根目录、server、client）
+5. **部署文档**：DEPLOYMENT_GUIDE.md 完整重写
+
+### 为什么不用 Puppeteer
+
+- AI 初诊和小程序共用同一台服务器，Puppeteer(无头 Chrome)内存占用高
+- 浏览器 `window.print()` + print CSS 已能满足 MVP 的 PDF 需求
+- 服务端 PDF 列为二期增强
+
+### print CSS 关键规则
+
+```css
+@media print {
+  .no-print { display: none !important; }     /* 隐藏按钮 */
+  .print-section { break-inside: avoid; }      /* 避免分页切断 */
+  print-color-adjust: exact;                   /* 保留颜色 */
+}
+```
+
+### Docker 端口规划
+
+| 服务 | 容器端口 | 宿主机端口 | 不与小程序冲突 |
+|---|---|---|---|
+| postgres | 5432 | 5433 | ✅ 小程序用 5432 |
+| server | 3001 | 3001 | ✅ 小程序用 3000 |
+| client | 80 | 8081 | ✅ |
+
+### 全链路冒烟测试通过项
+
+- LOW 报告：打印按钮可见 ✅
+- MEDIUM/HIGH：打印按钮不可见 ✅
+- APPROVE 后打印按钮出现 ✅
+- 打印预览免责声明存在 ✅
+- 后端 build ✅
+- 前端 build ✅
+
+---
+
 ## 2026-06-22 第10步：Phase 4 — 内部后台与人工复核闭环
 
 ### 做了什么

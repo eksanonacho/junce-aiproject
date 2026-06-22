@@ -4,3 +4,37 @@ body {
   margin: 0;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
+
+/* Phase 5: Print / Save PDF styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: #222 !important;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .print-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Remove shadows and borders that waste ink */
+  .shadow-sm, .shadow-md { box-shadow: none !important; }
+  .rounded-lg { border-radius: 0 !important; }
+  .border { border: 1px solid #ddd !important; }
+
+  /* Ensure disclaimer is visible */
+  .bg-yellow-50 { background: #fffbe6 !important; }
+  .text-yellow-700 { color: #856404 !important; }
+
+  /* Risk level badges keep color */
+  .bg-red-500 { background: #e74c3c !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bg-orange-500 { background: #e67e22 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bg-green-500 { background: #27ae60 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bg-gray-400 { background: #95a5a6 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

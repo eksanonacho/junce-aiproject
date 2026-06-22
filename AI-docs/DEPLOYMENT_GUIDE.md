@@ -4,149 +4,172 @@
 > **什么时候用**：部署 AI 初诊网站到服务器时。
 > **解决什么问题**：照着它能在本地运行，也能在未来上线时按推荐方案部署。
 >
-> ⚠️ AI 初诊项目尚未进入开发阶段。以下为基于小程序部署经验的预编方案，实际部署时可能调整。
-> 最后更新：2026-06-21。
+> ✅ Phase 5 完成：Dockerfile ×2 + docker-compose + 打印方案
+> **最后更新**：2026-06-22
 
 ---
 
-## 一、部署架构（与小程序共享服务器）
+## 一、快速启动（本地开发）
 
-> 来源：小程序 DEPLOYMENT_GUIDE.md、PROJECT_CONTEXT.md
+### 1.1 前置环境
 
-```
-        用户（浏览器/微信）
-              │  HTTPS
-              ▼
-    ┌───────────────────┐
-    │   Nginx 反向代理    │  HTTPS 证书 / 域名 / 转发
-    └─────────┬─────────┘
-              │
-    ┌─────────┴──────────────┐
-    ▼                        ▼
-┌──────────┐  ┌──────────┐  ┌──────────────┐
-│ 小程序 API │  │ AI 初诊  │  │ AI 初诊 H5   │
-│ (容器)    │  │ API(容器) │  │ 静态文件      │
-│ :3000     │  │ :3001     │  │ (Nginx 托管) │
-└─────┬─────┘  └─────┬────┘  └──────────────┘
-      │              │
-      └──────┬───────┘
-             ▼
-    ┌──────────────┐
-    │ PostgreSQL   │ (容器 + 数据卷)
-    │ 小程序库 +   │
-    │ AI 初诊库    │
-    └──────────────┘
-```
+- Node.js v24
+- pnpm（后端）
+- npm（前端）
+- PostgreSQL 16（本地运行 `brew services start postgresql@16`）
 
-要点：
-- **同一台云服务器**，三个容器（小程序 API、AI 初诊 API、PostgreSQL），Nginx 统一入口
-- **两个项目不同数据库**：小程序 `junce_miniprogram` / AI 初诊 `junce_ai_diagnosis`
-- **数据打通**：如需客户数据互通，通过 API 调用，不跨库直连
-- **服务器以君册名义注册**，开发方代管；首年费用含在合同总价内，第二年起客户自续
-
----
-
-## 二、环境变量（预编，实际以开发时为准）
+### 1.2 数据库初始化
 
 ```bash
-# 数据库连接
-DATABASE_URL="postgresql://用户名:密码@postgres:5432/junce_ai_diagnosis?schema=public"
+# 创建数据库
+psql -d postgres -c "CREATE DATABASE junce_ai_diagnosis;"
 
-# JWT 签名密钥（内部后台用）
-JWT_SECRET="替换成一段足够长的随机字符串"
-JWT_EXPIRES_IN="7d"
+# 初始化表结构 + 种子数据
+cd ai-diagnosis-server
+npx prisma db push --accept-data-loss
+npx prisma generate
+./node_modules/.bin/tsx prisma/seed.ts
+```
 
-# 后端端口
-PORT=3001
+### 1.3 启动后端
 
-# LLM API（如使用大模型）
-# LLM_API_KEY=""
-# LLM_API_BASE_URL=""
-# LLM_MODEL=""
+```bash
+cd ai-diagnosis-server
+pnpm build
+node dist/src/main.js
+# → http://localhost:3001
+# → GET /health → {"status":"ok"}
+```
 
-# 文件上传（报告附件等）
-# FILE_STORAGE_DRIVER="local"  # 或 oss
-# UPLOAD_MAX_SIZE=10485760     # 10MB
+### 1.4 启动前端
 
-# 客户侧网站地址
-# PUBLIC_URL="https://ai.juncecaishui.com"
-
-# 小程序 API 地址（如需数据互通）
-# MINIPROGRAM_API_URL="http://miniprogram-api:3000"
+```bash
+cd ai-diagnosis-client
+npm run dev
+# → http://localhost:5173
 ```
 
 ---
 
-## 三、Docker 化计划
+## 二、Docker 部署
 
-AI 初诊需准备：
+### 2.1 架构
 
-- **Dockerfile.api**：把后端打包成镜像
-- **Dockerfile.frontend**：前端 H5 构建 + Nginx 托管静态文件
-- **docker-compose.yml**：在小程序已有的 docker-compose 基础上，新增：
-  - `ai-api` 容器（后端 API）
-  - `ai-frontend` 容器（前端 H5 静态文件）
-  - 数据库不新增容器（共用 PostgreSQL 容器，新增数据库）
-- **Nginx 配置更新**：新增 AI 初诊域名/路径的反向代理规则
+```
+docker-compose:
+  postgres:16-alpine     → :5433（不与小程序 5432 冲突）
+  ai-diagnosis-server    → :3001
+  ai-diagnosis-client    → :8081（nginx serve dist）
+```
 
-### docker-compose.yml 新增部分（示例）
+### 2.2 启动
 
-```yaml
-  ai-api:
-    build:
-      context: ./ai-diagnosis/server
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3001"
-    environment:
-      - DATABASE_URL=postgresql://...
-      - JWT_SECRET=...
-    depends_on:
-      - postgres
-    restart: unless-stopped
+```bash
+# 构建并启动
+docker compose build
+docker compose up -d
 
-  ai-frontend:
-    build:
-      context: ./ai-diagnosis/client
-      dockerfile: Dockerfile
-    volumes:
-      - ai_static:/usr/share/nginx/html
-    restart: unless-stopped
+# 验证
+curl http://localhost:3001/health
+# 预期: {"status":"ok","service":"ai-diagnosis-server"}
+
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8081
+# 预期: 200
+```
+
+### 2.3 种子数据（Docker 环境）
+
+```bash
+docker compose exec server npx prisma db push --accept-data-loss
+docker compose exec server ./node_modules/.bin/tsx prisma/seed.ts
+```
+
+### 2.4 停止
+
+```bash
+docker compose down
+docker compose down -v  # 删除数据卷
 ```
 
 ---
 
-## 四、数据库
+## 三、环境变量
 
-- **共用 PostgreSQL 实例**：不新建数据库容器，在小程序已有的 PostgreSQL 容器中新增 `junce_ai_diagnosis` 数据库
-- **数据隔离**：小程序和 AI 初诊的数据表在不同数据库中，互不干扰
-- **备份**：随小程序数据库一起备份（pg_dump）
-
----
-
-## 五、微信小程序对接预留
-
-如果后续需要在微信小程序中嵌入 AI 初诊：
-
-- **webview 嵌入**：小程序通过 `<web-view>` 组件加载 AI 初诊 H5 页面
-- **客户数据同步**：AI 初诊提供 API，小程序后端定时/手动拉取留资客户数据
-- **免填基础信息**：从小程序跳转 AI 初诊时，通过 URL 参数传递已有客户信息
+| 变量 | 说明 | 默认值 |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL 连接串 | `postgresql://a1234@localhost:5432/junce_ai_diagnosis` |
+| `JWT_SECRET` | 后台 JWT 签名密钥 | 生产必须更换 |
+| `JWT_EXPIRES_IN` | JWT 过期时间 | `7d` |
+| `PORT` | 后端端口 | `3001` |
+| `AI_POLISH_ENABLED` | AI 润色开关 | `false` |
 
 ---
 
-## 六、部署 checklist（将来部署时逐项打勾）
+## 四、PDF / 打印说明
 
-- [ ] 云服务器以君册名义注册、实名、（如需）备案完成
-- [ ] 域名解析、SSL 证书配好（AI 初诊独立域名或子域名）
-- [ ] .env 生产变量齐全，JWT_SECRET 为强随机值
-- [ ] Docker 镜像构建通过
-- [ ] docker-compose 编排验证（新容器 + 现有多容器协调）
-- [ ] PostgreSQL 新数据库 `junce_ai_diagnosis` 创建
-- [ ] Nginx 反向代理 + HTTPS 配置验证（新增 AI 初诊路由）
-- [ ] 接口在生产环境冒烟测试通过
-- [ ] 客户侧网站可正常访问
-- [ ] 数据库已备份
+**MVP 阶段不使用 Puppeteer（无头 Chrome）**。
+
+原因：
+- 与小程序共用服务器，Puppeteer 内存占用高
+- 浏览器 `window.print()` 已能满足 MVP 需求
+
+客户使用方式：
+1. 打开报告页
+2. 点击「打印 / 保存 PDF」按钮
+3. 浏览器打印窗口中选择「另存为 PDF」
+
+服务端 PDF（`GET /api/reports/:publicId/pdf`）列为二期增强。
 
 ---
 
-> 参照小程序 docs/DEPLOYMENT_GUIDE.md 结构编写。具体部署配置以实际开发时的技术选型为准。
+## 五、测试账号
+
+| 用户名 | 密码 | 角色 |
+|---|---|---|
+| `admin` | `Admin@123456` | ADMIN |
+| `manager` | `Manager@123456` | MANAGER |
+| `accountant` | `Accountant@123456` | ACCOUNTANT |
+
+后台入口：`http://localhost:8081/admin/login`
+
+---
+
+## 六、服务器资源评估
+
+| 容器 | 预计内存 |
+|---|---|
+| postgres | ~50-100 MB |
+| server (NestJS) | ~80-150 MB |
+| client (nginx) | ~10-20 MB |
+| **总计** | **~150-270 MB** |
+
+无 Puppeteer / Chromium 进程。
+
+---
+
+## 七、常见问题
+
+### Q: 端口被占用
+```bash
+lsof -ti:3001 | xargs kill -9
+lsof -ti:8081 | xargs kill -9
+```
+
+### Q: Prisma migration 冲突
+```bash
+npx prisma db push --accept-data-loss  # 开发环境
+npx prisma migrate deploy              # 生产环境
+```
+
+### Q: Docker 内连接不上 postgres
+确认 DATABASE_URL 中 host 用 `postgres`（容器名），不是 `localhost`。
+
+### Q: 如何确认没有影响小程序
+```bash
+cd /Users/a1234/cpp/junce-miniprogram && git status
+# 预期: clean
+```
+
+---
+
+> 参照小程序 DEPLOYMENT_GUIDE.md 结构编写，独立于小程序部署。

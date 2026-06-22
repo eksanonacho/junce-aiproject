@@ -84,20 +84,28 @@ function priorityLabel(p: string) {
 
     <!-- Report Content -->
     <div v-else-if="report" class="max-w-2xl mx-auto px-4 py-6">
+      <!-- Print Button (customerVisible only) -->
+      <div v-if="report.customerVisible" class="no-print text-center mb-4">
+        <button @click="window.print()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+          🖨️ 打印 / 保存 PDF
+        </button>
+        <p class="text-gray-400 text-xs mt-1">点击后可在浏览器打印窗口中选择"保存为 PDF"</p>
+      </div>
+
       <!-- Header -->
-      <div class="text-center mb-6">
+      <div class="text-center mb-6 print-section">
         <h1 class="text-xl font-bold text-gray-800">{{ report.title }}</h1>
         <p class="text-gray-400 text-sm mt-1">报告编号：{{ report.reportNumber }}</p>
         <p class="text-gray-400 text-sm">生成时间：{{ report.generatedAt?.slice(0, 10) }}</p>
       </div>
 
       <!-- Disclaimer -->
-      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-5 text-sm text-yellow-700">
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-5 text-sm text-yellow-700 print-section">
         ⚠️ {{ report.disclaimer }}
       </div>
 
       <!-- Company Profile -->
-      <div v-if="report.companyProfile" class="bg-white rounded-lg shadow-sm p-4 mb-5">
+      <div v-if="report.companyProfile" class="bg-white rounded-lg shadow-sm p-4 mb-5 print-section">
         <h2 class="font-semibold text-gray-700 mb-2">企业基础画像</h2>
         <div v-for="(v, k) in report.companyProfile" :key="k" class="flex text-sm py-1 border-b border-gray-100 last:border-0">
           <span class="text-gray-400 w-24 flex-shrink-0">{{ k }}</span>
@@ -106,7 +114,7 @@ function priorityLabel(p: string) {
       </div>
 
       <!-- Risk Level -->
-      <div class="text-center mb-5">
+      <div class="text-center mb-5 print-section">
         <span :class="`inline-block ${levelColor(report.riskLevel)} text-white px-5 py-2 rounded-xl text-lg font-bold`">
           {{ levelLabel(report.riskLevel) }}
         </span>

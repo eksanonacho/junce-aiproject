@@ -287,6 +287,8 @@
 - **过期 token**：400 `{"code":"REPORT_TOKEN_EXPIRED","message":"报告访问凭证已过期"}`
 - **报告不存在**：404 `{"code":"REPORT_NOT_FOUND","message":"报告不存在"}`
 
+> ⚠️ **PDF 导出**：MVP 采用浏览器 `window.print()` 打印/保存 PDF 方案。服务端 PDF 接口（`GET /api/reports/:publicId/pdf`）列为二期增强，当前暂不实现。
+
 ### 5.3 POST /api/reports/submissions/:submissionPublicId/generate — 生成/重跑报告
 
 - **方法**：POST
