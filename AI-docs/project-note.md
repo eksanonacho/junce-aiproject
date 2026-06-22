@@ -1,0 +1,588 @@
+# 君册财税 AI 初诊网站 — 开发日志 / 学习手册
+
+> 每完成一步就记录在这里。格式：**做了什么** + **为什么这么做** + **踩了哪些坑** + **怎么验证**。
+
+---
+
+## 2026-06-22 第7步：Phase 1 — 问卷获取与提交闭环
+
+### 做了什么
+
+实现了 AI 初诊网站的第一条业务闭环：
+
+1. 后端 GET /api/questionnaire — 返回当前活跃问卷（5 组 10 题）
+2. 后端 POST /api/submissions — 接收答案、校验、入库
+3. 前端问卷页面 — 分组展示、进度条、必填校验、题型适配
+4. 前端提交成功页 — 展示 submissionPublicId
+5. Question 模型新增 publicId 字段
+
+### 后端实现要点
+
+**QuestionnaireModule**：
+- 从数据库查询 isActive=true 的问卷，include questions
+- 按 groupOrder + orderInGroup 排序
+- 服务层手动分组（groupBy groupLabel），避免 N+1 查询
+- 返回字段做了精简，不暴露数据库内部字段
+
+**SubmissionModule**：
+- DTO 使用 class-validator 做声明式校验
+  - `@IsInt()` questionId
+  - `@Matches(/^1[3-9]\d{9}$/)` phone
+  - `@ValidateNested` + `@Type(() => SubmitAnswerDto)` 嵌套数组
+- Service 层校验逻辑：
+  1. 问卷存在 + active
+  2. answers 非空
+  3. questionId 归属校验
+  4. 必填项全覆盖
+  5. 按 questionType 逐项校验 value 格式
+- YES_NO 题型校验修正：从硬编码 `yes/no/unknown` 改为读取 question.options 列表校验，兼容中文"是/否"
+- 提交成功后 status=SUBMITTED, submittedAt=now
+
+**DTO 与 class-validator 的使用方法**
+
+```typescript
+// DTO 定义：声明每个字段的类型和校验规则
+export class SubmitAnswerDto {
+  @IsInt()
+  questionId!: number;  // 必须是整数
+
+  @IsNotEmpty()
+  value!: unknown;  // 不能为空
+}
+
+// Controller 中：通过 @Body() 自动校验
+@Post()
+async submit(@Body() dto: SubmitQuestionnaireDto) {
+  // 到这里时 DTO 已经通过 class-validator 校验
+  return this.submissionService.submit(dto);
+}
+```
+
+**main.ts 中的 ValidationPipe 配置**：
+```typescript
+app.useGlobalPipes(new ValidationPipe({
+  whitelist: true,           // 自动删除 DTO 未定义的字段
+  forbidNonWhitelisted: true, // 传了未定义字段 → 400
+  transform: true,            // 自动把字符串 "1" 转成数字 1
+}));
+```
+
+### 前端实现要点
+
+**API 封装层**（`src/api/`）：
+- `client.ts`：封装 fetch，统一 BASE_URL、错误处理
+- `questionnaire.ts`：fetchQuestionnaire()
+- `submissions.ts`：submitQuestionnaire()
+- 页面不直接调 fetch，通过 API 层调用
+
+**问卷页面**（QuestionnairePage.vue）：
+- 分组展示：一次只显示一组题
+- 进度条：`(currentGroupIndex + 1) / totalGroups * 100%`
+- 题型适配：
+  - SINGLE_CHOICE → 自定义 radio（圆形选择器 + 边框高亮）
+  - MULTI_CHOICE → checkbox
+  - YES_NO → 按钮组
+  - RANGE / TEXT → input
+- 必填校验：当前组必填项全部填完才能进入下一组
+- 提交时再次全量校验必填项
+
+### 踩的坑
+
+**坑1：YES_NO 校验硬编码 vs 种子数据不匹配**
+
+- 现象：用"是"提交被拒，报"YES_NO 答案必须是 yes / no / unknown"
+- 原因：种子数据的 YES_NO 题目 options 是 `["是", "否"]`，但校验写死了英文值
+- 解决：改为统一从 question.options 读取可接受值，SINGLE_CHOICE / MULTI_CHOICE / YES_NO 共用同一段校验逻辑
+- 教训：不要根据题型名称假设选项值，始终从数据源读取
+
+**坑2：Question 加 publicId 的 migration 问题**
+
+- 现象：`prisma migrate dev` 报"无法添加 required column 到已有数据的表"
+- 原因：表中已有 10 行种子数据，加 NOT NULL 列时这些行没有默认值
+- 解决：先改为 `String?`（nullable），用 `prisma db push --accept-data-loss` 同步 schema，后续可回填数据后再改 required
+- 教训：已有数据的表加 required 字段时，需要分两步 migration
+
+**坑3：class-validator 未安装**
+
+- 现象：NestJS controller 使用 `@Body() dto: SubmitQuestionnaireDto` 不报错但也不校验
+- 原因：未安装 `class-validator` 和 `class-transformer`，ValidationPipe 中 transform 需要后者
+- 解决：`pnpm add class-validator class-transformer`
+- 教训：NestJS 项目的 DTO 校验依赖这两个包，脚手架不会自动安装
+
+### 验证命令
+
+```bash
+# 1. 获取问卷
+curl -s --noproxy "*" http://localhost:3001/api/questionnaire | python3 -m json.tool
+
+# 2. 完整提交（10 题全部答完）
+curl -s --noproxy "*" -X POST http://localhost:3001/api/submissions \
+  -H "Content-Type: application/json" \
+  -d '{"questionnaireId":1,"phone":"13800138000","answers":[
+    {"questionId":1,"value":"餐饮"},{"questionId":2,"value":"1-3年"},
+    {"questionId":3,"value":"个体户"},{"questionId":4,"value":"10-50万"},
+    {"questionId":5,"value":"1-5人"},{"questionId":6,"value":"是"},
+    {"questionId":7,"value":"否"},{"questionId":8,"value":"是"},
+    {"questionId":9,"value":"否"},{"questionId":10,"value":"否"}
+  ]}'
+
+# 3. 必填缺失
+curl -s --noproxy "*" -X POST http://localhost:3001/api/submissions \
+  -H "Content-Type: application/json" \
+  -d '{"questionnaireId":1,"answers":[{"questionId":1,"value":"餐饮"}]}'
+# 预期: {"code":"REQUIRED_ANSWER_MISSING",...}
+
+# 4. 非法选项
+curl -s --noproxy "*" -X POST http://localhost:3001/api/submissions \
+  -H "Content-Type: application/json" \
+  -d '{"questionnaireId":1,"answers":[...填满必填但 q1 value="无效选项"...]}'
+# 预期: {"code":"INVALID_ANSWER_VALUE",...}
+
+# 5. 数据库验证
+psql -d junce_ai_diagnosis -c 'SELECT "publicId", status, phone FROM "Submission" ORDER BY id DESC LIMIT 3;'
+psql -d junce_ai_diagnosis -c 'SELECT COUNT(*) FROM "Answer" WHERE "submissionId"=(SELECT MAX(id) FROM "Submission");'
+```
+
+### 前端验证
+
+```bash
+# 所有路由正常
+curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/
+curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/questionnaire
+curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/questionnaire/success
+
+# Vite 代理正常
+curl -s http://localhost:5173/api/questionnaire | python3 -c "import sys,json; print(json.load(sys.stdin)['title'])"
+```
+
+---
+
+## 2026-06-21 第1步：项目前期调研与需求分析
+
+### 做了什么
+
+阅读了小程序项目全部文档（CLAUDE.md、需求文档 v2、API_CONTRACT、PROJECT_STATE_SNAPSHOT、ROADMAP、AI_WEBDEVELOP_REQS.md、.docs 开发日志等），理解了：
+
+- 小程序当前状态：12 个模块、55 个接口、63/63 回归通过、后端已封板
+- AI 初诊网站定位：独立对外获客工具，不做小程序新模块
+- 两个项目关系：共享服务器、容器隔离、不同数据库、预留 API 互通
+
+输出了《AI 初诊网站对接内容分析稿》（15 章节 + 3 个输出版本），明确了需要向纪姐索要的资料清单。
+
+### 为什么先做需求分析
+
+AI 初诊不是"接一个大模型就能做诊断"。核心是把君册自己的财税经验、诊断规则、风险标准、报告模板结构化。如果跳过需求分析直接写代码，大概率方向跑偏。
+
+### 关键认识
+
+1. **AI 初诊 ≠ 通用 AI 问答**：规则引擎决定风险判断，AI 只润色文字。
+2. **独立但不孤立**：第一版独立开发，但预留小程序对接接口。
+3. **人工复核是合规底线**：高风险报告必须人工审核后才能给客户。
+4. **不编造规则**：九维/四维、风险标准、FAQ 必须由纪姐提供。
+
+---
+
+## 2026-06-21 第2步：建立 AI-docs 文档体系
+
+### 做了什么
+
+参照小程序 docs/ 的完整结构，为 AI 初诊建立了独立的 AI-docs/ 文档体系，共 15 个文件：
+
+| 文件 | 性质 |
+|------|------|
+| README.md | 项目入口文档 |
+| PROJECT_CONTEXT.md | 项目上下文（从小程序 11 个文档提取汇总） |
+| AI_WEBDEVELOP_REQS.md | 完整需求资料清单（从 docs 拷贝） |
+| PROJECT_STATE_SNAPSHOT.md | 当前进度快照 |
+| ROADMAP.md | 开发路线图 |
+| RISK_ANALYSIS.md | 风险分析 |
+| CTO_NOTES.md | 技术负责人提醒 |
+| API_CONTRACT.md | 接口契约（占位） |
+| DATABASE_GUIDE.md | 数据库设计（占位） |
+| SYSTEM_ARCHITECTURE.md | 系统架构（占位） |
+| TESTING_GUIDE.md | 测试指南（占位） |
+| TEST_RESULTS.md | 测试结果（占位） |
+| FRONTEND_HANDOFF.md | 前端交接（占位） |
+| DEPLOYMENT_GUIDE.md | 部署说明 |
+| AI_DIAGNOSIS_MVP_DEV_PLAN.md | MVP 开发方案 v2 |
+
+### 为什么 docs 和 AI-docs 要分开
+
+- docs/ 是小程序文档，属于另一个项目，不能改。
+- AI-docs/ 是 AI 初诊专属文档，开发过程中会频繁更新。
+- 两个项目的阶段不同（小程序已封板、AI 初诊刚起步），文档混在一起会干扰判断。
+
+### 文档设计原则
+
+1. 每个文件开头说明"给谁看、什么时候用、解决什么问题"。
+2. 占位文件（如 API_CONTRACT.md）写清了框架结构和填充时机，不是空文件。
+3. 有实际内容的文件标注了信息来源（如 PROJECT_CONTEXT.md 标注了每条信息来自哪个原始文档）。
+
+---
+
+## 2026-06-22 第3步：编写 MVP 开发方案 v2
+
+### 做了什么
+
+基于 Phase 0 之前的全部调研，编写了《AI 初诊网站 MVP 开发方案》，覆盖 14 个章节：
+
+1. 项目理解
+2. MVP 功能范围
+3. 推荐技术栈
+4. 页面流程设计
+5. 数据模型设计（16 个 Prisma Model）
+6. API 设计（13 个接口 + 权限矩阵）
+7. 规则引擎设计
+8. 报告生成设计
+9. 人工复核流程设计
+10. AI 调用边界设计
+11. 和小程序后续联动预留
+12. 开发任务拆分（6 个 Phase）
+13. 风险与注意事项
+14. 最终建议
+
+### v2 修订（10 项 P0 修正）
+
+根据审查意见修正了以下问题：
+
+| P0 | 问题 | 修正 |
+|---|---|---|
+| 1 | reportToken 设计缺失 | 新增 ReportAccessToken 模型，tokenHash + expiresAt |
+| 2 | 外部 ID 暴露自增 ID | Submission/Report 增加 publicId (cuid) |
+| 3 | 短信验证码模型缺失 | 新增 SmsVerificationCode 模型，codeHash + 5分钟过期 + 5次重试 |
+| 4 | 报告默认 AUTO_RELEASED | 改为默认 NEED_REVIEW |
+| 5 | docker-compose 合并小程序 | 改为独立 docker-compose.yml |
+| 6 | 前端 React | 改为 Vue3 + Vite + TS + Pinia + Tailwind CSS |
+| 7 | AES-256 全量加密 | 改为 MVP 基础安全策略 |
+| 8 | 统计接口在 MVP | 删除 GET /api/admin/stats |
+| 9 | PDF 阻塞 MVP | PDF 列为 MVP-B |
+| 10 | AI 润色默认开启 | AI_POLISH_ENABLED=false |
+
+### 什么是 P0 修正
+
+P0 = Priority 0，意思是"不改就不能往下做"的问题。比如客户侧 URL 暴露数据库自增 ID，不仅不安全，而且后续对接小程序时没法对齐客户身份。这类问题必须在 Phase 0 就修掉。
+
+---
+
+## 2026-06-22 第4步：Phase 0 项目初始化 — 后端
+
+### 做了什么
+
+创建了 AI 初诊网站的后端项目骨架：
+
+1. 用 NestJS CLI 创建项目
+2. 安装 Prisma + @prisma/adapter-pg
+3. 创建 PostgreSQL 数据库 `junce_ai_diagnosis`
+4. 编写 Prisma schema（16 个模型 + 8 个枚举）
+5. 执行 migration 建表
+6. 编写 seed.ts 写入种子数据
+7. 创建 PrismaService（adapter 模式）
+8. 实现 /health 接口
+9. 配置 main.ts（dotenv + CORS + 3001 端口）
+
+### 每件工具是干什么的（大白话）
+
+| 工具 | 一句话解释 |
+|------|-----------|
+| **NestJS** | Node.js 后端框架，强制模块化，代码组织整齐 |
+| **Prisma** | 数据库工具。用代码定义表结构，自动生成 SQL，不用手写 |
+| **@prisma/adapter-pg** | Prisma 7 的 PostgreSQL 适配器。Prisma 7 不再自动读 .env，必须通过 adapter 显式传入数据库连接 |
+| **PostgreSQL** | 关系型数据库。所有数据存在这里 |
+| **dotenv** | 从 .env 文件加载环境变量到 process.env |
+| **bcryptjs** | 密码哈希库。存密码哈希而不是明文 |
+| **tsx** | TypeScript 执行器。可以直接运行 .ts 文件（如 seed.ts），不需要先编译成 .js |
+| **cuid** | 生成唯一 ID 的算法。用于 publicId，比 UUID 短，适合 URL |
+
+### Prisma 7 adapter 模式详解
+
+Prisma 7 改变了客户端初始化方式。以前的写法：
+
+```typescript
+// Prisma 6 及以前（不再适用）
+const prisma = new PrismaClient(); // 自动读 .env 的 DATABASE_URL
+```
+
+Prisma 7 的新写法：
+
+```typescript
+// Prisma 7：必须通过 adapter 显式传入连接
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env['DATABASE_URL'] }),
+});
+```
+
+为什么 Prisma 7 要这样改？因为它想支持更多种类的数据库连接方式（不只是 PostgreSQL，还有 Prisma Postgres 云服务等），所以把连接方式做成了可插拔的 adapter。
+
+### 数据库命名约定（Prisma → PostgreSQL）
+
+Prisma schema 中字段用 camelCase（如 `companyName`），Prisma 自动映射到 PostgreSQL 的 snake_case（如 `company_name`）。但枚举值用中文（如 `"税务维度"`），这是君册的业务特点决定的——客户和内部员工都认中文。
+
+### 为什么独立数据库
+
+AI 初诊和小程序虽然共享 PostgreSQL 实例，但使用不同的数据库：
+- 小程序：`junce_dev`
+- AI 初诊：`junce_ai_diagnosis`
+
+好处：
+1. 数据隔离，互不影响
+2. Migration 独立，不会误改小程序的表
+3. 备份恢复独立
+4. 后续如果需要迁移到独立服务器，直接导出整个数据库即可
+
+### 踩的坑
+
+**坑1：pnpm approve-builds 交互式菜单无法非交互运行**
+
+- 现象：`pnpm install` 后 prisma 和 esbuild 的构建脚本被忽略，导致 `pnpm build` 失败
+- 原因：pnpm v10+ 出于安全考虑，默认不执行依赖的构建脚本，需要手动批准
+- 尝试了的方法（都不行）：
+  - `echo "a" | pnpm approve-builds` — 交互式菜单仍然需要手动输入
+  - `pnpm config set approve-builds` — 不支持这个 key
+  - `package.json` 的 `pnpm.onlyBuiltDependencies` — pnpm v11 已废弃这个字段
+- 最终解决：在项目根目录创建 `.npmrc`，写入 `onlyBuiltDependencies=@prisma/engines prisma unrs-resolver esbuild`
+- .npmrc 语法注意：值是**空格分隔**的包名列表，不是数组格式
+
+**坑2：Prisma schema 缺少反向关系字段**
+
+- 现象：`prisma migrate dev` 报 `P1012: The relation field is missing an opposite relation field`
+- 原因：RiskFinding 中有 `rule DiagnosisRule? @relation(...)`，但 DiagnosisRule 中没有对应的 `findings RiskFinding[]`
+- 解决：在 DiagnosisRule 和 RiskScenario 中分别加上 `findings RiskFinding[]`
+- 教训：Prisma 7 要求所有 @relation 必须是双向的，有外键的一方和反向的一方都需要声明
+
+**坑3：NestJS build 产物在 dist/src/ 而非 dist/**
+
+- 现象：`node dist/main.js` 报 MODULE_NOT_FOUND
+- 原因：NestJS 的 tsconfig 配置导致编译输出保留了 src/ 目录结构
+- 正确路径：`node dist/src/main.js`
+- 后续解决：可以在 nest-cli.json 中配置 `"sourceRoot": "src"` 让 build 产物直接输出到 dist/ 根目录
+
+**坑4：npm registry 网络不稳定**
+
+- 现象：`pnpm add` 频繁报 `ECONNRESET`、`UND_ERR_CONNECT_TIMEOUT`
+- 原因：本地网络到 npm registry 的连接不稳定
+- 临时方案：重试即可（pnpm 有自动重试机制，1分钟后重试）
+- 备选方案：使用淘宝镜像 `--registry https://registry.npmmirror.com`
+- 教训：在 package.json 中锁定关键依赖版本，避免频繁新增依赖
+
+### 怎么确认后端 OK
+
+```bash
+# 1. 确认数据库创建成功
+psql -d junce_ai_diagnosis -c "\dt"
+# 预期：看到 16 张业务表 + _prisma_migrations
+
+# 2. 启动后端
+cd ai-diagnosis-server
+node dist/src/main.js
+
+# 3. 测试 health check
+curl --noproxy "*" http://localhost:3001/health
+# 预期：{"status":"ok","service":"ai-diagnosis-server","timestamp":"..."}
+
+# 4. 验证种子数据
+psql -d junce_ai_diagnosis -c 'SELECT id, username, "realName", role FROM "AdminUser";'
+# 预期：1 行，admin / 管理员 / ADMIN
+
+psql -d junce_ai_diagnosis -c 'SELECT "ruleCode", dimension, "riskLevel" FROM "DiagnosisRule";'
+# 预期：3 行
+
+psql -d junce_ai_diagnosis -c 'SELECT COUNT(*) FROM "ForbiddenPhrase";'
+# 预期：15
+```
+
+---
+
+## 2026-06-22 第5步：Phase 0 项目初始化 — 前端
+
+### 做了什么
+
+创建了 AI 初诊网站的前端项目骨架：
+
+1. 用 Vite 创建 Vue3 + TypeScript 项目
+2. 安装 Vue Router、Pinia、Tailwind CSS
+3. 配置路由（6 条）
+4. 创建占位页面（3 个客户侧 + 3 个后台）
+5. 配置 Vite 代理（/api → localhost:3001）
+
+### 每件工具是干什么的（大白话）
+
+| 工具 | 一句话解释 |
+|------|-----------|
+| **Vue 3** | 前端框架。用组件化方式构建用户界面 |
+| **Vite** | 前端构建工具。开发时热更新极快，构建时打包优化 |
+| **TypeScript** | 带类型检查的 JavaScript。编译时就能发现字段拼写错误 |
+| **Vue Router** | Vue 的路由库。URL 变了就显示对应的页面组件 |
+| **Pinia** | Vue 的状态管理库。存全局数据（如 token、用户信息），各个页面都能读写 |
+| **Tailwind CSS** | CSS 工具库。用 class 名直接写样式（如 `bg-blue-600 text-white p-4`），不用写 .css 文件 |
+
+### 为什么选 Vue3 而不是 React
+
+1. 小程序前端用的就是 Vue3（uni-app），技术体系一致，降低学习成本。
+2. AI 初诊页面偏表单和报告展示，不需要 React 的复杂生态。
+3. Vue3 的单文件组件（template + script + style 写在一个 .vue 文件里）对小项目更友好。
+
+### 为什么用 Tailwind CSS v4
+
+Tailwind v4 相比 v3 的改进：
+- **零配置**：不需要 `tailwind.config.js`，自动扫描模板中的 class
+- **Vite 原生插件**：`@tailwindcss/vite` 直接集成，不需要 PostCSS 配置
+- **CSS-first 配置**：在 CSS 中用 `@theme` 定义自定义值，而不是 JS 配置
+
+项目中只需要两件事：
+1. `vite.config.ts` 中加 `import tailwindcss from '@tailwindcss/vite'`
+2. CSS 入口文件中写 `@import "tailwindcss"`
+
+### Vite 代理的作用
+
+```typescript
+// vite.config.ts
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://localhost:3001',  // 后端地址
+      changeOrigin: true,
+    },
+  },
+},
+```
+
+开发时前端跑在 `localhost:5173`，后端跑在 `localhost:3001`。如果前端直接请求 `localhost:3001/api/...`，浏览器会因为跨域（不同端口）拦截。Vite 代理让前端所有 `/api` 请求自动转发到后端，浏览器以为请求的是同源地址，就不存在跨域问题。
+
+### 路由设计说明
+
+```
+客户侧（无需登录）：         后台侧（需 JWT 登录）：
+/                           /admin/login
+/questionnaire              /admin/submissions
+/report/:publicId           /admin/reports/:publicId
+```
+
+`:publicId` 是动态路由参数。比如 `/report/abc123` 和 `/report/xyz789` 都匹配同一个 ReportPage 组件，组件内通过 `route.params.publicId` 拿到具体值。
+
+### 怎么确认前端 OK
+
+```bash
+# 1. 启动前端
+cd ai-diagnosis-client
+npm run dev
+
+# 2. 确认页面可访问
+curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/
+# 预期：200
+
+curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/questionnaire
+# 预期：200
+
+curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/report/test123
+# 预期：200
+
+curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/admin/login
+# 预期：200
+```
+
+---
+
+## 2026-06-22 第6步：编写独立 docker-compose.yml
+
+### 做了什么
+
+创建了 AI 初诊项目独立的 docker-compose.yml，包含 3 个服务：
+
+1. **postgres**：PostgreSQL 16 Alpine 镜像，独立数据卷 `ai_diagnosis_pgdata`
+2. **server**：NestJS 后端，依赖 postgres 健康检查通过后才启动
+3. **client**：前端静态文件，依赖 server
+
+### 为什么独立 compose
+
+- 不修改小程序的 docker-compose（小程序已封板，动 compose 风险大）
+- AI 初诊可以独立启停，不影响小程序运行
+- 后续如需同服务器部署，通过 Nginx 反向代理把两个项目的端口统一即可
+
+### docker-compose 关键配置解释
+
+```yaml
+depends_on:
+  postgres:
+    condition: service_healthy
+```
+
+`condition: service_healthy` 表示等 postgres 的健康检查通过后，才启动 server。这比简单的 `depends_on: - postgres` 更可靠——后者只等容器启动，不保证数据库已经能接受连接。
+
+postgres 的健康检查：
+
+```yaml
+healthcheck:
+  test: ["CMD-SHELL", "pg_isready -U a1234 -d junce_ai_diagnosis"]
+  interval: 5s
+  timeout: 5s
+  retries: 5
+```
+
+`pg_isready` 是 PostgreSQL 自带的工具，只检查数据库是否准备好接受连接，不查询任何业务表。
+
+---
+
+## 当前项目完整结构
+
+```
+junce-aiproject/
+├── CLAUDE.md                         # AI 开发纪律 + 铁律 + 工作流
+├── docs/                             # 小程序文档（只读参考，不修改）
+├── AI-docs/                          # AI 初诊项目文档（主动维护）
+│   ├── README.md                     # 项目入口文档
+│   ├── PROJECT_CONTEXT.md            # 项目上下文
+│   ├── PROJECT_STATE_SNAPSHOT.md     # 进度快照
+│   ├── ROADMAP.md                    # 开发路线图
+│   ├── API_CONTRACT.md               # 接口契约
+│   ├── DATABASE_GUIDE.md             # 数据库设计
+│   ├── SYSTEM_ARCHITECTURE.md        # 系统架构
+│   ├── TESTING_GUIDE.md             # 测试指南
+│   ├── TEST_RESULTS.md              # 测试结果
+│   ├── RISK_ANALYSIS.md             # 风险分析
+│   ├── CTO_NOTES.md                 # 技术负责人提醒
+│   ├── FRONTEND_HANDOFF.md          # 前端交接
+│   ├── DEPLOYMENT_GUIDE.md          # 部署说明
+│   ├── AI_WEBDEVELOP_REQS.md        # 需求资料清单
+│   ├── AI_DIAGNOSIS_MVP_DEV_PLAN.md # MVP 开发方案 v2
+│   └── project-note.md              # ← 你正在看的这个文件
+├── ai-diagnosis-server/              # NestJS 后端（3001 端口）
+│   ├── prisma/
+│   │   ├── schema.prisma            # 16 个模型 + 8 个枚举
+│   │   ├── seed.ts                  # 种子数据
+│   │   └── migrations/              # 迁移文件
+│   ├── src/
+│   │   ├── main.ts                  # 入口（dotenv + CORS + 3001）
+│   │   ├── app.module.ts            # 根模块
+│   │   ├── app.controller.ts        # / + /health
+│   │   └── prisma/                  # PrismaService + PrismaModule
+│   ├── .env                         # 环境变量（不入 git）
+│   ├── .env.example                 # 环境变量模板
+│   └── .npmrc                       # pnpm 配置
+├── ai-diagnosis-client/              # Vue3 前端（5173 端口）
+│   ├── src/
+│   │   ├── main.ts                  # 入口（Pinia + Router）
+│   │   ├── App.vue                  # 根组件
+│   │   ├── style.css                # Tailwind CSS 入口
+│   │   ├── router/index.ts          # 路由配置（6 条）
+│   │   ├── pages/                   # 客户侧页面
+│   │   └── admin/                   # 后台页面
+│   └── vite.config.ts               # Vite + Tailwind + 代理
+└── docker-compose.yml                # 独立 compose（3 服务）
+```
+
+---
+
+## 下一步
+
+Phase 0 已全部完成。下一步进入 Phase 1：问卷提交模块开发。
+
+Phase 1 需要做的：
+1. 后端：Questionnaire GET API + Submission POST API
+2. 前端：问卷页面（分组展示、单选/多选/区间选择/是-否、进度条）
+3. 验证：curl 提交完整问卷 → 数据库可见 Submission + Answer 记录
+
+---
+
+> 最后更新：2026-06-22

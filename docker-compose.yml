@@ -1,0 +1,52 @@
+# 君册财税 AI 初诊网站 — 独立 docker-compose.yml
+# 不引用、不修改小程序 docker-compose
+
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai-diagnosis-postgres
+    environment:
+      POSTGRES_USER: a1234
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: junce_ai_diagnosis
+    ports:
+      - "5432:5432"
+    volumes:
+      - ai_diagnosis_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U a1234 -d junce_ai_diagnosis" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./ai-diagnosis-server
+      dockerfile: Dockerfile
+    container_name: ai-diagnosis-server
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: "postgresql://a1234:postgres@postgres:5432/junce_ai_diagnosis?schema=public"
+      JWT_SECRET: "change-this-in-production"
+      JWT_EXPIRES_IN: "7d"
+      PORT: "3001"
+      AI_POLISH_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./ai-diagnosis-client
+      dockerfile: Dockerfile
+    container_name: ai-diagnosis-client
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+
+volumes:
+  ai_diagnosis_pgdata:
