@@ -222,6 +222,7 @@ model Report {
   htmlContent       String?
   disclaimerText    String
   reviewedById      Int?
+  reviewer          AdminUser?           @relation("AdminReviewer", fields: [reviewedById], references: [id])
   reviewedAt        DateTime?
   reviewRecords     ReviewRecord[]
   accessTokens      ReportAccessToken[]
@@ -278,12 +279,13 @@ model SmsVerificationCode {
 }
 
 model AdminUser {
-  id            Int            @id @default(autoincrement())
-  username      String         @unique
-  passwordHash  String
-  realName      String
-  role          AdminRole
-  reviewRecords ReviewRecord[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id              Int            @id @default(autoincrement())
+  username        String         @unique
+  passwordHash    String
+  realName        String
+  role            AdminRole
+  reviewRecords   ReviewRecord[]
+  reviewedReports Report[]       @relation("AdminReviewer")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
