@@ -1,5 +1,3 @@
-import type { ReportStatus } from '../types/api';
-
 const BASE = '/api/admin';
 
 function getToken(): string {

@@ -8,6 +8,8 @@ const route = useRoute();
 const publicId = route.params.publicId as string;
 const token = route.query.token as string;
 
+function printReport() { window.print(); }
+
 const loading = ref(true);
 const error = ref('');
 const report = ref<ReportDetail | null>(null);
@@ -86,7 +88,7 @@ function priorityLabel(p: string) {
     <div v-else-if="report" class="max-w-2xl mx-auto px-4 py-6">
       <!-- Print Button (customerVisible only) -->
       <div v-if="report.customerVisible" class="no-print text-center mb-4">
-        <button @click="window.print()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+        <button @click="printReport" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
           🖨️ 打印 / 保存 PDF
         </button>
         <p class="text-gray-400 text-xs mt-1">点击后可在浏览器打印窗口中选择"保存为 PDF"</p>

@@ -24,6 +24,7 @@ const totalGroups = computed(() => groups.value.length);
 const isFirstGroup = computed(() => currentGroupIndex.value === 0);
 const isLastGroup = computed(() => currentGroupIndex.value === totalGroups.value - 1);
 
+function reloadPage() { window.location.reload(); }
 onMounted(async () => {
   try {
     questionnaire.value = await fetchQuestionnaire();
@@ -139,7 +140,7 @@ function getOptionsList(q: QuestionDto): string[] {
     <div v-else-if="error" class="flex items-center justify-center h-screen">
       <div class="text-center">
         <p class="text-red-500 text-lg mb-4">{{ error }}</p>
-        <button @click="() => window.location.reload()" class="bg-blue-600 text-white px-4 py-2 rounded">
+        <button @click="reloadPage" class="bg-blue-600 text-white px-4 py-2 rounded">
           重试
         </button>
       </div>
