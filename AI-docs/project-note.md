@@ -4,6 +4,111 @@
 
 ---
 
+## 2026-06-22 第8步：Phase 2 — AI 初诊规则引擎
+
+### 做了什么
+
+实现了从客户答案到结构化诊断结果的完整后端链路：
+
+1. **rule-engine.service.ts**：规则加载 + 答案归一化 + 10 种 operator 匹配
+2. **risk-level.service.ts**：总体风险等级计算（取最高风险 + 3 MEDIUM 升级）
+3. **service-recommendation.service.ts**：服务推荐去重 + 优先级排序
+4. **diagnosis.service.ts**：诊断主流程编排 + transaction 安全写入
+5. **diagnosis.controller.ts**：手动触发诊断 + 查询诊断结果 2 个接口
+6. **Submission 自动诊断**：提交后自动触发，diagnosis 失败不影响数据入库
+7. **Schema 变更**：SubmissionStatus 新增 FAILED 枚举
+
+### 规则引擎设计
+
+```
+客户答案 → normalizeAnswer → 标准化格式
+                ↓
+        DiagnosisRule[] → 逐条匹配 → evaluateCondition
+                ↓
+        matchedRules[] → RiskLevelService → overallRiskLevel + needReview
+                ↓
+        matchedRules[] → ServiceRecService → 去重排序后推荐
+                ↓
+        DiagnosisResult ← transaction ← 写入 DB
+```
+
+### 答案归一化（normalizeAnswer）
+
+为什么需要归一化？Answer.answerValue 是 `Json` 类型，可能是 string、number、array、object 等多种格式。每个 operator 如果自己处理这些格式，代码会非常杂乱。
+
+归一化后的结构：
+```typescript
+{
+  questionId: number,
+  value: unknown,          // 原始值
+  arrayValue: string[] | null,  // 数组场景
+  numericValue: number | null,  // 数值场景（gt/gte/lt/lte）
+  stringValue: string | null,   // equals/not_equals 场景
+  exists: boolean,              // exists 场景
+}
+```
+
+### 支持的 operator（10 种）
+
+| operator | 用途 | 示例 |
+|---|---|---|
+| equals | 精确匹配 | `{"operator":"equals","value":"是"}` |
+| not_equals | 不等于 | `{"operator":"not_equals","value":"否"}` |
+| includes | 多选包含 | `{"operator":"includes","value":"代理记账"}` |
+| in | 值在列表中 | `{"operator":"in","value":["A","B"]}` |
+| gt | 大于 | `{"operator":"gt","value":500000}` |
+| gte | 大于等于 | `{"operator":"gte","value":6}` |
+| lt | 小于 | `{"operator":"lt","value":100}` |
+| lte | 小于等于 | `{"operator":"lte","value":12}` |
+| range | 区间匹配 | `{"operator":"range","value":{"min":100,"max":500}}` |
+| exists | 答案存在 | `{"operator":"exists"}` |
+
+### 风险等级计算规则
+
+```
+任一 HIGH → 整体 HIGH, needReview=true
+3+ MEDIUM → 整体 HIGH, needReview=true (叠加升级)
+有 MEDIUM 无 HIGH → 整体 MEDIUM
+只有 LOW → 整体 LOW
+0 findings → UNKNOWN, needReview=true
+```
+
+### 安全写入（transaction）
+
+删除旧结果 + 写入新结果必须在同一个 Prisma transaction 中完成。如果写 RiskFinding 失败，不能留下"DiagnosisResult 存在但 findings 为空"的半成品。
+
+### 踩的坑
+
+**坑1：Prisma Json 字段的类型转换**
+
+- 现象：`dimensionResults: array` 报 TS2322 类型不匹配
+- 原因：Prisma 的 `Json` 字段在 TypeScript 中是 `InputJsonValue` 类型，直接赋值对象数组会报类型错误
+- 解决：使用 `as any` 断言
+- 教训：Prisma 的 Json 字段在 TS 中需要显式类型断言
+
+**坑2：$transaction 中 include 不会自动推断嵌套类型**
+
+- 现象：`result.findings` 报 Property does not exist
+- 原因：Prisma 的 `$transaction` 回调返回值类型推断有限制
+- 解决：在 transaction 内部使用 `findMany` 单独查询关联数据，用外部变量计数
+
+**坑3：复合条件（compositeCondition）需要同时支持**
+
+- 实现：`compositeCondition` 为数组时，所有子条件 AND 组合
+- 预留：OR 组合标记 TODO，当前不需要
+
+### 测试结果（5/5 通过）
+
+| 测试 | 答案特征 | 规则 | 风险 | needReview |
+|---|---|---|---|---|
+| 1 无风险 | 全部安全答案 | 0 命中 | UNKNOWN | true |
+| 2 中风险 | Q7=是(零申报) | TAX_001 | MEDIUM | false |
+| 3 高风险A | Q6=否(未报税) | TAX_002 | HIGH | true |
+| 4 高风险B | Q10=是(个人收款) | FUND_001 | HIGH | true |
+| 5 3MEDIUM→HIGH | Q7=是+Q2=不到1年+Q8=否 | 3 MEDIUM | HIGH | true |
+
+---
+
 ## 2026-06-22 第7步：Phase 1 — 问卷获取与提交闭环
 
 ### 做了什么

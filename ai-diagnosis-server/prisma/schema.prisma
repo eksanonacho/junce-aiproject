@@ -27,6 +27,7 @@ enum SubmissionStatus {
   SUBMITTED
   DIAGNOSING
   COMPLETED
+  FAILED
 }
 
 enum SubmissionSource {

@@ -1,10 +1,16 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { DiagnosisService } from '../diagnosis/diagnosis.service';
 import { SubmitQuestionnaireDto, SubmitAnswerDto } from './dto/submit-questionnaire.dto';
 
 @Injectable()
 export class SubmissionService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(SubmissionService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly diagnosisService: DiagnosisService,
+  ) {}
 
   async submit(dto: SubmitQuestionnaireDto) {
     // 1. Validate questionnaire exists and is active
@@ -105,11 +111,27 @@ export class SubmissionService {
       },
     });
 
-    return {
-      submissionPublicId: submission.publicId,
-      status: 'SUBMITTED',
-      message: '提交成功',
-    };
+    let diagnosisStatus = 'NOT_RUN';
+    // 8. Auto-trigger diagnosis (non-blocking: submission succeeds even if diagnosis fails)
+    try {
+      const diagResult = await this.diagnosisService.runDiagnosis(submission.publicId);
+      diagnosisStatus = 'COMPLETED';
+      return {
+        submissionPublicId: submission.publicId,
+        status: 'SUBMITTED',
+        diagnosisStatus,
+        message: '提交成功，诊断已完成',
+      };
+    } catch (err: unknown) {
+      this.logger.error(`Diagnosis failed for ${submission.publicId}: ${(err as Error).message}`);
+      diagnosisStatus = 'FAILED';
+      return {
+        submissionPublicId: submission.publicId,
+        status: 'SUBMITTED',
+        diagnosisStatus,
+        message: '提交成功，但诊断失败，请联系管理员',
+      };
+    }
   }
 
   private validateAnswerValue(

@@ -118,11 +118,76 @@
 | REQUIRED_ANSWER_MISSING | 必填题未填写，details 列出缺失题目（400） |
 | INVALID_ANSWER_VALUE | 答案格式不正确，details 列出具体错误（400） |
 
+> Phase 2 更新：提交接口返回新增 `diagnosisStatus` 字段（COMPLETED / FAILED / NOT_RUN）
+
 ---
 
-## 四、Health 检查（基础设施）
+## 四、诊断接口（Phase 2 新增）
 
-### 4.1 GET /health
+### 4.1 POST /api/diagnosis/submissions/:publicId/run — 手动触发诊断
+
+- **方法**：POST
+- **认证**：无需（开发调试用）
+- **路径参数**：`publicId` — Submission 的 publicId
+- **成功返回**：
+
+```json
+{
+  "submissionPublicId": "xxx",
+  "diagnosisResultId": 1,
+  "overallRiskLevel": "MEDIUM",
+  "findingCount": 2,
+  "recommendationCount": 1,
+  "needReview": true
+}
+```
+
+- **错误**：404 `SUBMISSION_NOT_FOUND`
+
+### 4.2 GET /api/diagnosis/submissions/:publicId — 查询诊断结果
+
+- **方法**：GET
+- **认证**：无需（开发调试用）
+- **返回结构**：
+
+```json
+{
+  "submissionPublicId": "xxx",
+  "overallRiskLevel": "MEDIUM",
+  "needReview": false,
+  "dimensionResults": [
+    {
+      "dimension": "税务维度",
+      "riskLevel": "MEDIUM",
+      "findings": [
+        {
+          "title": "长期零申报",
+          "riskLevel": "MEDIUM",
+          "description": "连续零申报可能引起税务关注",
+          "suggestion": "建议规范账务处理",
+          "recommendServices": ["代理记账", "合规项目"]
+        }
+      ]
+    }
+  ],
+  "findings": [...],
+  "recommendations": [
+    {
+      "serviceType": "代理记账",
+      "reason": "根据命中的风险项推荐",
+      "priority": "STRONG"
+    }
+  ]
+}
+```
+
+- **错误**：404 `SUBMISSION_NOT_FOUND` / `DIAGNOSIS_RESULT_NOT_FOUND`
+
+---
+
+## 五、Health 检查（基础设施）
+
+### 5.1 GET /health
 
 ```json
 { "status": "ok", "service": "ai-diagnosis-server", "timestamp": "..." }
@@ -130,13 +195,14 @@
 
 ---
 
-## 五、当前接口总数
+## 六、当前接口总数
 
 | 模块 | 接口数 | 状态 |
 |---|---|---|
 | Health | 1 | ✅ |
 | Questionnaire | 1 | ✅ Phase 1 |
 | Submission | 1 | ✅ Phase 1 |
-| **总计** | **3** | |
+| Diagnosis | 2 | ✅ Phase 2 |
+| **总计** | **5** | |
 
 后续接口：报告生成、后台管理、人工复核 — Phase 2-4 开发。

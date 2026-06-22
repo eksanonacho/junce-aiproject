@@ -40,6 +40,7 @@ export interface SubmitPayload {
 export interface SubmitResponse {
   submissionPublicId: string;
   status: string;
+  diagnosisStatus?: string;
   message: string;
 }
 

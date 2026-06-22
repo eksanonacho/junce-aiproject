@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchQuestionnaire } from '../api/questionnaire';
 import { submitQuestionnaire } from '../api/submissions';
-import type { QuestionnaireResponse, QuestionGroupDto, QuestionDto } from '../types/api';
+import type { QuestionnaireResponse, QuestionDto } from '../types/api';
 
 const router = useRouter();
 
@@ -12,7 +12,7 @@ const loading = ref(true);
 const error = ref('');
 const questionnaire = ref<QuestionnaireResponse | null>(null);
 const currentGroupIndex = ref(0);
-const answers = ref<Map<number, unknown>>(new Map());
+const answers = reactive<Record<number, unknown>>({});
 const phone = ref('');
 const submitting = ref(false);
 const submitError = ref('');
@@ -51,11 +51,11 @@ function goPrev() {
 
 // Answer handling
 function setAnswer(questionId: number, value: unknown) {
-  answers.value.set(questionId, value);
+  answers[questionId] = value;
 }
 
 function getAnswer(questionId: number): unknown {
-  return answers.value.get(questionId);
+  return answers[questionId];
 }
 
 // Check if current group has all required fields filled
@@ -64,7 +64,7 @@ const canProceed = computed(() => {
   return currentGroup.value.questions
     .filter((q) => q.required)
     .every((q) => {
-      const v = answers.value.get(q.id);
+      const v = answers[q.id];
       if (q.type === 'MULTI_CHOICE') return Array.isArray(v) && v.length > 0;
       return v !== undefined && v !== null && v !== '';
     });
@@ -75,19 +75,17 @@ async function handleSubmit() {
   if (!questionnaire.value) return [];
 
   // Collect all answers for all groups
-  const allAnswers = [];
-  for (const [, answerMap] = [answers.value]) {
-    for (const [qId, value] of answerMap.entries()) {
-      allAnswers.push({ questionId: qId, value });
-    }
-  }
+  const allAnswers = Object.entries(answers).map(([qId, value]) => ({
+    questionId: Number(qId),
+    value,
+  }));
 
   // Also check all required questions
   const allQuestions = questionnaire.value.groups.flatMap((g) => g.questions);
   const missingRequired = allQuestions
     .filter((q) => q.required)
     .filter((q) => {
-      const v = answers.value.get(q.id);
+      const v = answers[q.id];
       if (q.type === 'MULTI_CHOICE') return !Array.isArray(v) || v.length === 0;
       return v === undefined || v === null || v === '';
     });
@@ -106,7 +104,7 @@ async function handleSubmit() {
       phone: phone.value || undefined,
       answers: allAnswers,
     });
-    router.push(`/questionnaire/success?submissionPublicId=${result.submissionPublicId}`);
+    router.push(`/questionnaire/success?submissionPublicId=${result.submissionPublicId}&diagnosisStatus=${result.diagnosisStatus || 'NOT_RUN'}`);
   } catch (e: unknown) {
     submitError.value = (e as { message?: string }).message || '提交失败，请重试';
   } finally {

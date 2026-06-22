@@ -1,8 +1,27 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const submissionPublicId = route.query.submissionPublicId as string;
+const diagnosisStatus = route.query.diagnosisStatus as string;
+
+const statusLabel = computed(() => {
+  switch (diagnosisStatus) {
+    case 'COMPLETED': return '诊断已完成';
+    case 'NOT_RUN': return '诊断未运行';
+    case 'FAILED': return '诊断失败';
+    default: return '诊断状态未知';
+  }
+});
+
+const statusColor = computed(() => {
+  switch (diagnosisStatus) {
+    case 'COMPLETED': return 'text-green-600 bg-green-50 border-green-200';
+    case 'FAILED': return 'text-red-600 bg-red-50 border-red-200';
+    default: return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+  }
+});
 </script>
 
 <template>
@@ -16,7 +35,12 @@ const submissionPublicId = route.query.submissionPublicId as string;
       </div>
 
       <h1 class="text-2xl font-bold text-gray-800 mb-2">提交成功</h1>
-      <p class="text-gray-500 mb-6">感谢您的填写！</p>
+      <p class="text-gray-500 mb-4">感谢您的填写！</p>
+
+      <!-- Diagnosis Status -->
+      <div :class="`inline-block px-4 py-2 rounded-lg border text-sm font-medium mb-6 ${statusColor}`">
+        {{ statusLabel }}
+      </div>
 
       <div class="bg-gray-50 rounded p-3 mb-6 text-left">
         <p class="text-xs text-gray-400 mb-1">提交编号</p>
@@ -24,8 +48,8 @@ const submissionPublicId = route.query.submissionPublicId as string;
       </div>
 
       <p class="text-sm text-gray-400 mb-8">
-        系统将根据您的填写内容生成企业初诊报告。<br />
-        当前阶段（Phase 1）报告生成功能尚未开放，敬请期待。
+        系统已根据您的填写内容完成初步诊断。<br />
+        报告生成功能将在后续版本开放。
       </p>
 
       <router-link

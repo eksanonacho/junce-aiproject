@@ -20,7 +20,7 @@
 |---|---|
 | Phase 0：项目初始化 | ✅ 已完成（后端 /health、前端 6 路由、Prisma 16 模型、seed 7 类数据） |
 | Phase 1：问卷获取与提交 | ✅ 已完成（GET /api/questionnaire + POST /api/submissions） |
-| Phase 2：规则引擎 | ⬜ 未开始 |
+| Phase 2：规则引擎 | ✅ 已完成（5 接口，规则匹配+风险等级+服务推荐+自动诊断） |
 | Phase 3：报告生成 | ⬜ 未开始 |
 | Phase 4：后台管理 + 人工复核 | ⬜ 未开始 |
 | Phase 5：PDF + 部署 | ⬜ 未开始 |
