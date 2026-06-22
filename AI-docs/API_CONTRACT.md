@@ -338,11 +338,11 @@
 
 | 模块 | 接口数 | 状态 |
 |---|---|---|
-| Health | 1 | ✅ |
-| Questionnaire | 1 | ✅ Phase 1 |
-| Submission | 1 | ✅ Phase 1 |
-| Diagnosis | 2 | ✅ Phase 2 |
-| Report | 3 | ✅ Phase 3 |
+| Health | 1 | ✅ `[06-22]` |
+| Questionnaire | 1 | ✅ `[06-22]` Phase 1 |
+| Submission | 1 | ✅ `[06-22]` Phase 1 |
+| Diagnosis | 2 | ✅ `[06-22]` Phase 2 |
+| Report | 3 | ✅ `[06-22]` Phase 3 |
 | **总计** | **8** | |
 
 后续接口：后台管理、人工复核 — Phase 4 开发。
