@@ -256,4 +256,71 @@ psql -d junce_ai_diagnosis -c "SELECT COUNT(*) FROM \"Disclaimer\" WHERE \"isAct
 
 ---
 
+## 八、Phase 4 测试（后台管理 & 人工复核）
+
+### 8.1 Auth 测试
+
+```bash
+# 正确登录
+curl -s --noproxy "*" -X POST http://localhost:3001/api/admin/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"Admin@123456"}'
+# 预期: {"accessToken":"...","user":{...}}
+
+# 错误密码
+curl -s --noproxy "*" -X POST http://localhost:3001/api/admin/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"wrong"}'
+# 预期: {"code":"INVALID_CREDENTIALS","message":"用户名或密码错误"}
+```
+
+### 8.2 权限矩阵实测
+
+测试账号：`admin/Admin@123456`、`manager/Manager@123456`、`accountant/Accountant@123456`
+
+| 操作 | ACCOUNTANT | MANAGER | ADMIN |
+|---|---|---|---|
+| 查看列表 | ✅ | ✅ | ✅ |
+| PATCH htmlContent | 403 | ✅ | ✅ |
+| PATCH riskLevel | 403 | 403 | ✅ |
+| POST generate | 403 | ✅ | ✅ |
+
+```bash
+TOK=$(...)  # 先登录获取 token
+# MANAGER 修改 htmlContent → OK
+curl -s --noproxy "*" -X PATCH "http://localhost:3001/api/admin/reports/<pid>" \
+  -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" \
+  -d '{"htmlContent":"<p>修改后</p>"}'
+# 预期: OK
+
+# MANAGER 修改 riskLevel → 403
+curl -s --noproxy "*" -X PATCH "http://localhost:3001/api/admin/reports/<pid>" \
+  -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" \
+  -d '{"riskLevel":"HIGH"}'
+# 预期: {"code":"FORBIDDEN",...}
+```
+
+### 8.3 APPROVE / REJECT
+
+```bash
+# APPROVE
+curl -s --noproxy "*" -X POST "http://localhost:3001/api/admin/reports/<pid>/review" \
+  -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" \
+  -d '{"action":"APPROVE","comment":"复核通过"}'
+# 预期: reviewStatus=REVIEWED, customerVisible=true
+
+# 客户侧联动：APPROVE 后可查看完整报告
+curl -s --noproxy "*" "http://localhost:3001/api/reports/<pid>?token=<rtok>"
+# 预期: customerVisible=true, htmlContent 非空
+```
+
+### 8.4 ReviewRecord 留痕验证
+
+```bash
+psql -d junce_ai_diagnosis -c "SELECT action, comment, \"createdAt\" FROM \"ReviewRecord\" ORDER BY id DESC LIMIT 5;"
+# 每次 APPROVE/REJECT/MODIFY 都应该有一条记录
+```
+
+---
+
 > 测试未通过时，先查 `pnpm build` 编译错误，再查接口返回的 code/message，最后查数据库数据一致性。

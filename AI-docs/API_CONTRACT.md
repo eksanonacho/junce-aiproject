@@ -290,7 +290,9 @@
 ### 5.3 POST /api/reports/submissions/:submissionPublicId/generate — 生成/重跑报告
 
 - **方法**：POST
-- **认证**：⚠️ 当前无 JWT（开发调试用），Phase 4 后需要加后台权限
+- **认证**：JWT（Phase 4 已加权限），Roles：MANAGER / ADMIN
+- **无 token**：401
+- **ACCOUNTANT**：403
 - **路径参数**：`submissionPublicId` — Submission 的 publicId
 - **前置条件**：该 Submission 必须已有 DiagnosisResult
 - **重跑逻辑**：删除旧 Report 及关联 token，重新生成
@@ -324,9 +326,87 @@
 
 ---
 
-## 六、Health 检查（基础设施）
+## 六、后台管理接口（Phase 4 新增）
 
-### 6.1 GET /health
+> 所有后台接口需要 JWT 认证，Role 权限见各接口说明。
+
+### 6.1 POST /api/admin/auth/login — 后台登录
+
+- **方法**：POST
+- **认证**：无
+- **Body**：`{"username":"admin","password":"Admin@123456"}`
+- **成功返回**：
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "user": { "id": 1, "username": "admin", "realName": "管理员", "role": "ADMIN" }
+}
+```
+
+- **错误**：401 `{"code":"INVALID_CREDENTIALS","message":"用户名或密码错误"}`
+
+### 6.2 GET /api/admin/submissions — 提交记录列表
+
+- **方法**：GET
+- **认证**：JWT，Roles：ACCOUNTANT / MANAGER / ADMIN
+- **Query**：`page`, `pageSize`, `riskLevel`(LOW/MEDIUM/HIGH), `reviewStatus`(NEED_REVIEW/REVIEWED/REJECTED/AUTO_RELEASED)
+- **返回**：分页结构，手机号脱敏（138****8000）
+
+```json
+{
+  "items": [{ "submissionPublicId":"xxx","reportPublicId":"yyy","phoneMasked":"138****8000","overallRiskLevel":"HIGH","reviewStatus":"NEED_REVIEW","customerVisible":false,"findingCount":3,"recommendationCount":2 }],
+  "page": 1, "pageSize": 20, "total": 100
+}
+```
+
+- **无 token**：401
+
+### 6.3 GET /api/admin/reports/:publicId — 报告详情
+
+- **方法**：GET
+- **认证**：JWT，Roles：ACCOUNTANT / MANAGER / ADMIN
+- **返回**：report + diagnosisResult + findings + recommendations + reviewRecords（含 reviewerName）
+- **不返回**：tokenHash / reportAccessToken
+
+### 6.4 POST /api/admin/reports/:publicId/review — 人工复核
+
+- **方法**：POST
+- **认证**：JWT，Roles：ACCOUNTANT / MANAGER / ADMIN
+- **Body**：`{"action":"APPROVE"|"REJECT","comment":"复核备注"}`
+- **APPROVE 效果**：reviewStatus=REVIEWED, customerVisible=true, 写 ReviewRecord
+- **REJECT 效果**：reviewStatus=REJECTED, customerVisible=false, 写 ReviewRecord
+
+### 6.5 PATCH /api/admin/reports/:publicId — 修改报告
+
+- **方法**：PATCH
+- **认证**：JWT
+- **权限**：
+  - MANAGER / ADMIN：可修改 `htmlContent`、`customerVisible`
+  - 仅 ADMIN：可修改 `riskLevel`、`reviewStatus`
+  - ACCOUNTANT：403
+- **修改 htmlContent**：自动执行 ForbiddenPhrase 检查
+- **留痕**：每次修改写 ReviewRecord(action=MODIFY, changes=差异对象)
+- **Body 示例**：`{"htmlContent":"<p>修改后</p>","comment":"调整措辞"}`
+
+### 6.6 权限矩阵
+
+| 操作 | ACCOUNTANT | MANAGER | ADMIN |
+|---|---|---|---|
+| 登录 | ✅ | ✅ | ✅ |
+| 查看列表 | ✅ | ✅ | ✅ |
+| 查看详情 | ✅ | ✅ | ✅ |
+| APPROVE / REJECT | ✅ | ✅ | ✅ |
+| PATCH htmlContent | 403 | ✅ | ✅ |
+| PATCH customerVisible | 403 | ✅ | ✅ |
+| PATCH riskLevel | 403 | 403 | ✅ |
+| POST generate | 403 | ✅ | ✅ |
+
+---
+
+## 七、Health 检查（基础设施）
+
+### 7.1 GET /health
 
 ```json
 { "status": "ok", "service": "ai-diagnosis-server", "timestamp": "..." }
@@ -334,7 +414,7 @@
 
 ---
 
-## 七、当前接口总数
+## 八、当前接口总数
 
 | 模块 | 接口数 | 状态 |
 |---|---|---|
@@ -343,6 +423,6 @@
 | Submission | 1 | ✅ `[06-22]` Phase 1 |
 | Diagnosis | 2 | ✅ `[06-22]` Phase 2 |
 | Report | 3 | ✅ `[06-22]` Phase 3 |
-| **总计** | **8** | |
-
-后续接口：后台管理、人工复核 — Phase 4 开发。
+| Auth | 1 | ✅ `[06-22]` Phase 4 |
+| Admin | 4 | ✅ `[06-22]` Phase 4 |
+| **总计** | **13** | |

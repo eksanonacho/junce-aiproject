@@ -4,6 +4,53 @@
 
 ---
 
+## 2026-06-22 第10步：Phase 4 — 内部后台与人工复核闭环
+
+### 做了什么
+
+实现了完整的后台管理和人工复核功能：
+
+1. **AuthModule**：后台 JWT 登录、JwtAuthGuard、RolesGuard、@Roles() 装饰器
+2. **AdminModule**：提交列表（分页+筛选+手机脱敏）、报告详情、复核（APPROVE/REJECT）、报告修改（PATCH + 留痕）
+3. **接口权限**：generate 接口从开放改为 MANAGER/ADMIN only
+4. **前端**：登录页、提交列表、报告详情/复核页、API 封装（401 自动跳转）
+
+### 权限设计
+
+```
+ACCOUNTANT → 查看 + 复核（通过/驳回），不能修改报告内容
+MANAGER    → 查看 + 复核 + 修改 htmlContent/customerVisible，不能改 riskLevel
+ADMIN      → 全部权限（含 riskLevel/reviewStatus 修改 + generate 重跑）
+```
+
+用 NestJS 的 `@Roles('MANAGER','ADMIN')` 装饰器 + RolesGuard 实现，和 mini-program 项目的 RBAC 模式一致。
+
+### ReviewRecord 留痕机制
+
+每次 APPROVE/REJECT/MODIFY 都会写入 ReviewRecord：
+- reviewerId → 关联 AdminUser
+- action → APPROVE/REJECT/MODIFY
+- changes → MODIFY 时记录差异（如 `{"riskLevel":"LOW→MEDIUM"}`）
+- comment → 复核备注
+- createdAt → 时间戳
+
+### 踩的坑
+
+**坑：AdminController 全局 @UseGuards 导致 RolesGuard 在所有方法上生效**
+
+- 类级别 `@UseGuards(JwtAuthGuard, RolesGuard)` 意味着所有方法都需要 role 权限
+- 但 AdminModule 中的 list/detail/review 没有显式 `@Roles()` → 等于所有角色都能访问
+- 而 PATCH 有 `@Roles('MANAGER','ADMIN')` → 只有 MANAGER/ADMIN 能访问
+- 这个设计是故意的：默认开放给所有后台用户，敏感操作加 @Roles() 限制
+
+**坑：generate 接口从开放改权限后，SubmissionService 自动调 generate 仍能成功**
+
+- SubmissionService 内部调用 ReportService.generateReport()，不走 HTTP controller
+- 所以 generate 接口的 JWT 限制不影向自动提交流程
+- 这是正确的行为：自动提交时由系统生成报告，手动重跑需要 MANAGER/ADMIN 权限
+
+---
+
 ## 2026-06-22 第9步：Phase 2.1 — 修复无风险场景基线逻辑 + 固化测试规则
 
 ### P0 问题
