@@ -59,7 +59,7 @@ npm run dev
 docker-compose:
   postgres:16-alpine     → :5433（不与小程序 5432 冲突）
   ai-diagnosis-server    → :3001
-  ai-diagnosis-client    → :8081（nginx serve dist）
+  ai-diagnosis-client    → :8080（nginx serve dist）
 ```
 
 ### 2.2 启动
@@ -73,7 +73,7 @@ docker compose up -d
 curl http://localhost:3001/health
 # 预期: {"status":"ok","service":"ai-diagnosis-server"}
 
-curl -s -o /dev/null -w "%{http_code}" http://localhost:8081
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8080
 # 预期: 200
 ```
 
@@ -130,7 +130,7 @@ docker compose down -v  # 删除数据卷
 | `manager` | `Manager@123456` | MANAGER |
 | `accountant` | `Accountant@123456` | ACCOUNTANT |
 
-后台入口：`http://localhost:8081/admin/login`
+后台入口：`http://localhost:8080/admin/login`
 
 ---
 
@@ -152,7 +152,7 @@ docker compose down -v  # 删除数据卷
 ### Q: 端口被占用
 ```bash
 lsof -ti:3001 | xargs kill -9
-lsof -ti:8081 | xargs kill -9
+lsof -ti:8080 | xargs kill -9
 ```
 
 ### Q: Prisma migration 冲突

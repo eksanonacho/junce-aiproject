@@ -10,7 +10,7 @@
 
 1. **打印/保存 PDF**：报告页增加打印按钮，`window.print()` + print CSS（隐藏按钮、保留报告内容、适配 A4、免责声明强制打印）
 2. **Dockerfile ×2**：server（node:22-alpine 多阶段构建）+ client（Vite build + nginx serve）
-3. **docker-compose**：postgres(5433) + server(3001) + client(8081)，端口不与小程序冲突
+3. **docker-compose**：postgres(5433) + server(3001) + client(8080)，端口不与小程序冲突
 4. **环境变量标准化**：.env.example ×3（根目录、server、client）
 5. **部署文档**：DEPLOYMENT_GUIDE.md 完整重写
 
@@ -36,7 +36,7 @@
 |---|---|---|---|
 | postgres | 5432 | 5433 | ✅ 小程序用 5432 |
 | server | 3001 | 3001 | ✅ 小程序用 3000 |
-| client | 80 | 8081 | ✅ |
+| client | 80 | 8080 | ✅ |
 
 ### 全链路冒烟测试通过项
 
