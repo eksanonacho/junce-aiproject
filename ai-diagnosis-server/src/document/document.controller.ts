@@ -5,6 +5,7 @@ import {
   Delete,
   Param,
   Query,
+  Headers,
   UseInterceptors,
   UploadedFile,
   Body,
@@ -37,14 +38,16 @@ export class DocumentController {
   @Get('/api/submissions/:submissionPublicId/document-checklist')
   async getChecklist(
     @Param('submissionPublicId') submissionPublicId: string,
+    @Headers('x-submission-token') token?: string,
   ) {
+    await this.documentService.validateSubmissionToken(submissionPublicId, token);
     return this.documentService.getChecklist(submissionPublicId);
   }
 
   // --- V2: upload document (requires X-Submission-Token) ---
   @Post('/api/submissions/:submissionPublicId/documents')
   @UseInterceptors(FileInterceptor('file', {
-    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+    limits: { fileSize: 20 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       const allowedMimes = [
         'application/pdf',
@@ -66,7 +69,9 @@ export class DocumentController {
     @Param('submissionPublicId') submissionPublicId: string,
     @UploadedFile() file: any,
     @Body('docType') docType: string,
+    @Headers('x-submission-token') token?: string,
   ) {
+    await this.documentService.validateSubmissionToken(submissionPublicId, token);
     if (!file) throw new BadRequestException('文件不能为空');
     if (!docType) throw new BadRequestException('docType 不能为空');
     return this.documentService.uploadDocument(submissionPublicId, file, docType);
@@ -74,7 +79,11 @@ export class DocumentController {
 
   // --- V2: list documents (requires X-Submission-Token) ---
   @Get('/api/submissions/:submissionPublicId/documents')
-  async listDocuments(@Param('submissionPublicId') submissionPublicId: string) {
+  async listDocuments(
+    @Param('submissionPublicId') submissionPublicId: string,
+    @Headers('x-submission-token') token?: string,
+  ) {
+    await this.documentService.validateSubmissionToken(submissionPublicId, token);
     return this.documentService.listDocuments(submissionPublicId);
   }
 
@@ -83,7 +92,9 @@ export class DocumentController {
   async deleteDocument(
     @Param('submissionPublicId') submissionPublicId: string,
     @Param('documentPublicId') documentPublicId: string,
+    @Headers('x-submission-token') token?: string,
   ) {
+    await this.documentService.validateSubmissionToken(submissionPublicId, token);
     return this.documentService.deleteDocument(submissionPublicId, documentPublicId);
   }
 

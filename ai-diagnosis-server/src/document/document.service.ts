@@ -1,8 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, UnauthorizedException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class DocumentService {
@@ -286,6 +287,17 @@ export class DocumentService {
       mimeType: doc.mimeType,
       sizeBytes: doc.sizeBytes,
     };
+  }
+
+  /** Validate submission access token */
+  async validateSubmissionToken(submissionPublicId: string, token?: string): Promise<void> {
+    if (!token) throw new UnauthorizedException({ code: 'TOKEN_REQUIRED', message: '缺少访问凭证' });
+    const submission = await this.prisma.submission.findUnique({ where: { publicId: submissionPublicId } });
+    if (!submission || !submission.accessTokenHash) {
+      throw new UnauthorizedException({ code: 'INVALID_TOKEN', message: '访问凭证无效' });
+    }
+    const valid = await bcrypt.compare(token, submission.accessTokenHash);
+    if (!valid) throw new UnauthorizedException({ code: 'INVALID_TOKEN', message: '访问凭证无效' });
   }
 
   /** Compute completeness score and update submission */

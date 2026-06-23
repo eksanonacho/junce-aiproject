@@ -20,23 +20,35 @@ const submitting = ref(false);
 const submitError = ref('');
 const questionRefs = ref<Record<string, HTMLElement>>({});
 
-interface FlatQ extends QuestionDto { groupLabel: string; index: number }
+interface FlatQ extends QuestionDto { groupLabel: string; index: number; skipLogic?: unknown }
 const flatQuestions = computed<FlatQ[]>(() => {
   if (!questionnaire.value) return [];
   let idx = 0;
   return questionnaire.value.groups.flatMap(g =>
-    g.questions.map(q => ({ ...q, groupLabel: g.label, index: ++idx }))
+    g.questions.map(q => ({ ...q, groupLabel: g.label, index: ++idx, skipLogic: (q as any).skipLogic }))
   );
 });
 
-const totalQuestions = computed(() => flatQuestions.value.length);
-const answeredCount = computed(() => flatQuestions.value.filter(q => {
+// V2: filter by mode using skipLogic.hideInModes
+const visibleQuestions = computed<FlatQ[]>(() => {
+  if (!isV2Mode.value) return flatQuestions.value;
+  const mode = diagnosisStore.mode || 'STANDARD';
+  return flatQuestions.value.filter(q => {
+    if (!q.skipLogic) return true;
+    const sl = q.skipLogic as { hideInModes?: string[] };
+    if (!sl.hideInModes || !Array.isArray(sl.hideInModes)) return true;
+    return !sl.hideInModes.includes(mode);
+  });
+});
+
+const totalQuestions = computed(() => visibleQuestions.value.length);
+const answeredCount = computed(() => visibleQuestions.value.filter(q => {
   const v = answers[q.id];
   if (q.type === 'MULTI_CHOICE') return Array.isArray(v) && v.length > 0;
   return v !== undefined && v !== null && v !== '';
 }).length);
 const allRequiredDone = computed(() => {
-  return flatQuestions.value.filter(q => q.required).every(q => {
+  return visibleQuestions.value.filter(q => q.required).every(q => {
     const v = answers[q.id];
     if (q.type === 'MULTI_CHOICE') return Array.isArray(v) && v.length > 0;
     return v !== undefined && v !== null && v !== '';
@@ -45,7 +57,7 @@ const allRequiredDone = computed(() => {
 
 const sectionLabels = computed(() => {
   const seen = new Set<string>();
-  return flatQuestions.value.map(q => {
+  return visibleQuestions.value.map(q => {
     if (seen.has(q.groupLabel)) return null;
     seen.add(q.groupLabel);
     return q.groupLabel;
@@ -70,7 +82,7 @@ function setAnswer(qId: number, value: unknown) {
   answers[qId] = value;
   nextTick(() => {
     setTimeout(() => {
-      const nextUnanswered = flatQuestions.value.find(q => {
+      const nextUnanswered = visibleQuestions.value.find(q => {
         const v = answers[q.id];
         if (q.type === 'MULTI_CHOICE') return !Array.isArray(v) || v.length === 0;
         return v === undefined || v === null || v === '';
@@ -96,7 +108,7 @@ function isAnswered(q: FlatQ) {
 
 async function handleSubmit() {
   if (!questionnaire.value) return;
-  const required = flatQuestions.value.filter(q => q.required);
+  const required = visibleQuestions.value.filter(q => q.required);
   const missing = required.filter(q => !isAnswered(q as any));
   if (missing.length > 0) {
     submitError.value = `还有 ${missing.length} 个必填问题未完成`;
@@ -110,7 +122,7 @@ async function handleSubmit() {
     if (isV2Mode.value && diagnosisStore.submissionPublicId) {
       // V2 flow: use diagnosis store complete
       const answersList = Object.entries(answers).map(([qId, value]) => {
-        const q = flatQuestions.value.find((fq) => fq.id === Number(qId));
+        const q = visibleQuestions.value.find((fq) => fq.id === Number(qId));
         return { questionPublicId: q?.publicId || '', value };
       }).filter((a) => a.questionPublicId);
       result = await diagnosisStore.completeDiagnosis(answersList);
@@ -163,7 +175,7 @@ async function handleSubmit() {
         <p class="text-[#64748B] text-sm mb-4">通过 5 个维度完成企业财税基础筛查</p>
 
         <!-- Questions -->
-        <template v-for="(q, qi) in flatQuestions" :key="q.id">
+        <template v-for="(q, qi) in visibleQuestions" :key="q.id">
           <div v-if="sectionLabels[qi]" class="flex items-center gap-3 mt-8 mb-4 first:mt-0">
             <div class="h-px flex-1 bg-[#E2E8F0]"></div>
             <span class="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider whitespace-nowrap">{{ sectionLabels[qi] }}</span>

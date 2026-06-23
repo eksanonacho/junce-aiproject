@@ -9,6 +9,16 @@ const reportStatus = route.query.reportStatus as string;
 const reportPublicId = route.query.reportPublicId as string;
 const reportAccessToken = route.query.reportAccessToken as string;
 
+// V2 fields
+const isV2 = route.query.v2 === 'true';
+const v2Mode = route.query.mode as string;
+const docCompletenessScore = route.query.documentCompletenessScore as string;
+
+const modeLabel = computed(() => {
+  const map: Record<string, string> = { QUICK: '快速初诊', STANDARD: '标准初诊', DEEP: '深度经营出诊' };
+  return map[v2Mode] || v2Mode;
+});
+
 const statusLabel = computed(() => {
   switch (diagnosisStatus) {
     case 'COMPLETED': return '诊断已完成';
@@ -31,6 +41,13 @@ const showReportButton = computed(() =>
 const reportUrl = computed(() =>
   `/report/${reportPublicId}?token=${encodeURIComponent(reportAccessToken || '')}`,
 );
+
+const docScoreColor = computed(() => {
+  const s = parseInt(docCompletenessScore) || 0;
+  if (s >= 70) return 'text-green-600';
+  if (s >= 40) return 'text-amber-600';
+  return 'text-red-600';
+});
 </script>
 
 <template>
@@ -44,15 +61,31 @@ const reportUrl = computed(() =>
       <h1 class="text-2xl font-bold text-gray-800 mb-2">提交成功</h1>
       <p class="text-gray-500 mb-4">感谢您的填写！</p>
 
+      <!-- V2 mode info -->
+      <div v-if="isV2 && v2Mode" class="inline-block px-3 py-1.5 rounded-lg border text-sm font-medium mb-3 text-blue-600 bg-blue-50 border-blue-200">
+        {{ modeLabel }}
+      </div>
+
+      <!-- V2 document completeness -->
+      <div v-if="isV2 && docCompletenessScore" class="mb-3 text-sm">
+        <span class="text-gray-500">资料完整度：</span>
+        <span class="font-semibold" :class="docScoreColor">{{ docCompletenessScore }}%</span>
+      </div>
+
       <div :class="`inline-block px-4 py-2 rounded-lg border text-sm font-medium mb-4 ${statusColor}`">
         {{ statusLabel }}
       </div>
 
-      <div v-if="reportStatus === 'READY'" class="inline-block px-4 py-2 rounded-lg border text-sm font-medium mb-6 text-green-600 bg-green-50 border-green-200">
+      <div v-if="reportStatus === 'READY'" class="inline-block px-4 py-2 rounded-lg border text-sm font-medium mb-4 text-green-600 bg-green-50 border-green-200">
         报告已生成
       </div>
-      <div v-else-if="reportStatus" class="inline-block px-4 py-2 rounded-lg border text-sm font-medium mb-6 text-yellow-600 bg-yellow-50 border-yellow-200">
+      <div v-else-if="reportStatus" class="inline-block px-4 py-2 rounded-lg border text-sm font-medium mb-4 text-yellow-600 bg-yellow-50 border-yellow-200">
         报告{{ reportStatus === 'FAILED' ? '生成失败' : '生成中' }}
+      </div>
+
+      <!-- V2 PENDING_REVIEW hint -->
+      <div v-if="isV2 && !showReportButton && reportStatus === 'READY'" class="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+        ⏳ 您的初诊结果正在由君册专业人员复核，复核完成后将展示完整报告。
       </div>
 
       <div class="bg-gray-50 rounded p-3 mb-4 text-left">
@@ -69,7 +102,7 @@ const reportUrl = computed(() =>
       </router-link>
 
       <p class="text-sm text-gray-400 mb-6">
-        {{ showReportButton ? '点击上方按钮查看您的企业初诊报告。' : '报告生成功能将在后续版本开放。' }}
+        {{ showReportButton ? '点击上方按钮查看您的企业初诊报告。本报告为初步筛查参考，不构成最终专业意见。' : (isV2 ? '报告正由君册专业人员复核。' : '报告生成功能将在后续版本开放。') }}
       </p>
 
       <router-link to="/" class="inline-block px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-100 transition">

@@ -95,7 +95,7 @@ model Questionnaire {
 
 model Question {
   id              Int            @id @default(autoincrement())
-  publicId        String?        @unique
+  publicId        String?        @unique @default(cuid())
   questionnaireId Int
   questionnaire   Questionnaire  @relation(fields: [questionnaireId], references: [id])
   groupLabel      String

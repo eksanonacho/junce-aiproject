@@ -50,6 +50,7 @@ export class QuestionnaireService {
           options: q.options,
           required: q.isRequired,
           riskDimension: q.riskDimension,
+          skipLogic: q.skipLogic,
         })),
       })),
     };

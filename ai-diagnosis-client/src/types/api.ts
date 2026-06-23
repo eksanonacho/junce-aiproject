@@ -8,6 +8,7 @@ export interface QuestionDto {
   options: unknown;
   required: boolean;
   riskDimension: string | null;
+  skipLogic?: unknown;
 }
 
 export interface QuestionGroupDto {
