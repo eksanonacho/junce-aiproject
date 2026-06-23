@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted, nextTick, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchQuestionnaire } from '../api/questionnaire';
 import { submitQuestionnaire } from '../api/submissions';
@@ -7,103 +7,101 @@ import type { QuestionnaireResponse, QuestionDto } from '../types/api';
 
 const router = useRouter();
 
-// State
 const loading = ref(true);
 const error = ref('');
 const questionnaire = ref<QuestionnaireResponse | null>(null);
-const currentGroupIndex = ref(0);
 const answers = reactive<Record<number, unknown>>({});
 const phone = ref('');
 const submitting = ref(false);
 const submitError = ref('');
+const questionRefs = ref<Record<string, HTMLElement>>({});
 
-// Computed
-const groups = computed(() => questionnaire.value?.groups ?? []);
-const currentGroup = computed(() => groups.value[currentGroupIndex.value]);
-const totalGroups = computed(() => groups.value.length);
-const isFirstGroup = computed(() => currentGroupIndex.value === 0);
-const isLastGroup = computed(() => currentGroupIndex.value === totalGroups.value - 1);
+// Flatten questions with group context
+interface FlatQ extends QuestionDto { groupLabel: string; index: number }
+const flatQuestions = computed<FlatQ[]>(() => {
+  if (!questionnaire.value) return [];
+  let idx = 0;
+  return questionnaire.value.groups.flatMap(g =>
+    g.questions.map(q => ({ ...q, groupLabel: g.label, index: ++idx }))
+  );
+});
+
+const totalQuestions = computed(() => flatQuestions.value.length);
+const answeredCount = computed(() => flatQuestions.value.filter(q => {
+  const v = answers[q.id];
+  if (q.type === 'MULTI_CHOICE') return Array.isArray(v) && v.length > 0;
+  return v !== undefined && v !== null && v !== '';
+}).length);
+const allRequiredDone = computed(() => {
+  const required = flatQuestions.value.filter(q => q.required);
+  return required.every(q => {
+    const v = answers[q.id];
+    if (q.type === 'MULTI_CHOICE') return Array.isArray(v) && v.length > 0;
+    return v !== undefined && v !== null && v !== '';
+  });
+});
 
 function reloadPage() { window.location.reload(); }
 onMounted(async () => {
-  try {
-    questionnaire.value = await fetchQuestionnaire();
-  } catch (e: unknown) {
-    error.value = (e as { message?: string }).message || '加载问卷失败';
-  } finally {
-    loading.value = false;
-  }
+  try { questionnaire.value = await fetchQuestionnaire(); }
+  catch (e: unknown) { error.value = (e as { message?: string }).message || '加载问卷失败'; }
+  finally { loading.value = false; }
 });
 
-// Navigation
-function goNext() {
-  if (currentGroupIndex.value < totalGroups.value - 1) {
-    currentGroupIndex.value++;
-    window.scrollTo(0, 0);
-  }
+function setAnswer(qId: number, value: unknown) {
+  answers[qId] = value;
+  // Auto scroll to next unanswered question after short delay
+  nextTick(() => {
+    setTimeout(() => {
+      const nextUnanswered = flatQuestions.value.find(q => {
+        const v = answers[q.id];
+        if (q.type === 'MULTI_CHOICE') return !Array.isArray(v) || v.length === 0;
+        return v === undefined || v === null || v === '';
+      });
+      if (nextUnanswered) {
+        questionRefs.value[`q-${nextUnanswered.id}`]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 350);
+  });
 }
 
-function goPrev() {
-  if (currentGroupIndex.value > 0) {
-    currentGroupIndex.value--;
-    window.scrollTo(0, 0);
-  }
+function getAnswer(qId: number): unknown { return answers[qId]; }
+function getOptionsList(q: QuestionDto): string[] {
+  const opts = q.options as Record<string, unknown> | null;
+  if (opts && Array.isArray(opts)) return opts as string[];
+  if (opts && Array.isArray((opts as any).options)) return (opts as any).options as string[];
+  return [];
 }
 
-// Answer handling
-function setAnswer(questionId: number, value: unknown) {
-  answers[questionId] = value;
-}
-
-function getAnswer(questionId: number): unknown {
-  return answers[questionId];
-}
-
-// Check if current group has all required fields filled
-const canProceed = computed(() => {
-  if (!currentGroup.value) return false;
-  return currentGroup.value.questions
-    .filter((q) => q.required)
-    .every((q) => {
-      const v = answers[q.id];
-      if (q.type === 'MULTI_CHOICE') return Array.isArray(v) && v.length > 0;
-      return v !== undefined && v !== null && v !== '';
+// Scroll to first unanswered on mount
+watch(() => flatQuestions.value.length, (len) => {
+  if (len > 0) {
+    nextTick(() => {
+      questionRefs.value[`q-${flatQuestions.value[0].id}`]?.scrollIntoView({ block: 'start' });
     });
+  }
 });
 
 // Submit
 async function handleSubmit() {
-  if (!questionnaire.value) return [];
-
-  // Collect all answers for all groups
-  const allAnswers = Object.entries(answers).map(([qId, value]) => ({
-    questionId: Number(qId),
-    value,
-  }));
-
-  // Also check all required questions
-  const allQuestions = questionnaire.value.groups.flatMap((g) => g.questions);
-  const missingRequired = allQuestions
-    .filter((q) => q.required)
-    .filter((q) => {
-      const v = answers[q.id];
-      if (q.type === 'MULTI_CHOICE') return !Array.isArray(v) || v.length === 0;
-      return v === undefined || v === null || v === '';
-    });
-
-  if (missingRequired.length > 0) {
-    submitError.value = `请完成所有必填题（共 ${missingRequired.length} 题未答）`;
+  if (!questionnaire.value) return;
+  const required = flatQuestions.value.filter(q => q.required);
+  const missing = required.filter(q => {
+    const v = answers[q.id];
+    if (q.type === 'MULTI_CHOICE') return !Array.isArray(v) || v.length === 0;
+    return v === undefined || v === null || v === '';
+  });
+  if (missing.length > 0) {
+    submitError.value = `还有 ${missing.length} 个必填问题未完成`;
+    questionRefs.value[`q-${missing[0].id}`]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
-
-  submitting.value = true;
-  submitError.value = '';
-
+  submitting.value = true; submitError.value = '';
   try {
     const result = await submitQuestionnaire({
       questionnaireId: questionnaire.value.id,
       phone: phone.value || undefined,
-      answers: allAnswers,
+      answers: Object.entries(answers).map(([qId, value]) => ({ questionId: Number(qId), value })),
     });
     const params = new URLSearchParams({
       submissionPublicId: result.submissionPublicId,
@@ -115,190 +113,207 @@ async function handleSubmit() {
     router.push(`/questionnaire/success?${params.toString()}`);
   } catch (e: unknown) {
     submitError.value = (e as { message?: string }).message || '提交失败，请重试';
-  } finally {
-    submitting.value = false;
-  }
+  } finally { submitting.value = false; }
 }
 
-// Get options list for a question
-function getOptionsList(q: QuestionDto): string[] {
-  const opts = q.options as Record<string, unknown> | null;
-  if (opts && Array.isArray(opts)) return opts as string[];
-  if (opts && Array.isArray((opts as any).options)) return (opts as any).options as string[];
-  return [];
-}
+const isMultichoice = (q: FlatQ) => q.type === 'MULTI_CHOICE';
+const isSingleOrYesNo = (q: FlatQ) => q.type === 'SINGLE_CHOICE' || q.type === 'YES_NO';
+const isAnswered = (q: FlatQ) => {
+  const v = answers[q.id];
+  if (q.type === 'MULTI_CHOICE') return Array.isArray(v) && v.length > 0;
+  return v !== undefined && v !== null && v !== '';
+};
+
+const prevSectionLabel = ref('');
+const showSectionHeader = (label: string) => {
+  const show = label !== prevSectionLabel.value;
+  if (show) prevSectionLabel.value = label;
+  return show;
+};
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center h-screen">
-      <p class="text-gray-500 text-lg">加载问卷中...</p>
-    </div>
+<div class="min-h-screen bg-[#F2F5FC] text-[#1E293B]">
 
-    <!-- Error -->
-    <div v-else-if="error" class="flex items-center justify-center h-screen">
-      <div class="text-center">
-        <p class="text-red-500 text-lg mb-4">{{ error }}</p>
-        <button @click="reloadPage" class="bg-blue-600 text-white px-4 py-2 rounded">
-          重试
-        </button>
-      </div>
-    </div>
+  <!-- Loading -->
+  <div v-if="loading" class="flex items-center justify-center h-screen">
+    <div class="text-center"><div class="w-8 h-8 border-2 border-[#2563EB] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div><p class="text-[#64748B]">加载初诊问卷...</p></div>
+  </div>
 
-    <!-- Questionnaire -->
-    <div v-else-if="questionnaire" class="max-w-lg mx-auto px-4 py-6">
-      <!-- Header -->
-      <h1 class="text-2xl font-bold text-gray-800 mb-1">{{ questionnaire.title }}</h1>
-      <p v-if="questionnaire.description" class="text-gray-400 text-sm mb-6">{{ questionnaire.description }}</p>
+  <!-- Error -->
+  <div v-else-if="error" class="flex items-center justify-center h-screen">
+    <div class="text-center"><p class="text-red-500 text-lg mb-4">{{ error }}</p><button @click="reloadPage" class="bg-[#1E3A8A] text-white px-5 py-2.5 rounded-xl">重试</button></div>
+  </div>
 
-      <!-- Progress -->
-      <div class="mb-6">
-        <div class="flex justify-between text-sm text-gray-500 mb-1">
-          <span>第 {{ currentGroupIndex + 1 }} / {{ totalGroups }} 组</span>
-          <span>{{ currentGroup?.label }}</span>
+  <!-- Main -->
+  <div v-else-if="questionnaire" class="max-w-[1180px] mx-auto px-4 md:px-6">
+    <div class="flex gap-8">
+
+      <!-- ====== 左侧：问答流 ====== -->
+      <div class="flex-1 min-w-0 max-w-[720px] mx-auto md:mx-0 pt-8 pb-24 md:pb-32">
+
+        <!-- Header -->
+        <div class="mb-8">
+          <router-link to="/" class="text-[#64748B] text-sm hover:text-[#1E3A8A] inline-flex items-center gap-1 mb-4">&larr; 返回首页</router-link>
+          <h1 class="text-2xl md:text-3xl font-bold text-[#0F172A] mb-2">{{ questionnaire.title }}</h1>
+          <p class="text-[#64748B] text-sm mb-4">通过 5 个维度完成企业财税基础筛查</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="bg-[#EFF6FF] text-[#2563EB] text-[11px] px-2.5 py-0.5 rounded-full">3 分钟填写</span>
+            <span class="bg-[#EFF6FF] text-[#2563EB] text-[11px] px-2.5 py-0.5 rounded-full">信息仅用于初诊</span>
+            <span class="bg-[#FEF3C7] text-[#92400E] text-[11px] px-2.5 py-0.5 rounded-full">高风险人工复核</span>
+            <span class="bg-[#EFF6FF] text-[#2563EB] text-[11px] px-2.5 py-0.5 rounded-full">报告可留存</span>
+          </div>
         </div>
-        <div class="w-full bg-gray-200 rounded-full h-2">
+
+        <!-- Group headers + Question cards -->
+        <template v-for="q in flatQuestions" :key="q.id">
+          <!-- Section divider -->
+          <div v-if="showSectionHeader(q.groupLabel)" class="flex items-center gap-3 mt-8 mb-4 first:mt-0">
+            <div class="h-px flex-1 bg-[#E2E8F0]"></div>
+            <span class="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider whitespace-nowrap">{{ q.groupLabel }}</span>
+            <div class="h-px flex-1 bg-[#E2E8F0]"></div>
+          </div>
+
+          <!-- Question card -->
           <div
-            class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-            :style="{ width: ((currentGroupIndex + 1) / totalGroups) * 100 + '%' }"
-          ></div>
+            :ref="(el: any) => { if (el) questionRefs[`q-${q.id}`] = el }"
+            class="mb-4 rounded-2xl p-5 md:p-6 transition-all duration-500"
+            :class="isAnswered(q) ? 'bg-[#F8FAFC] border border-[#E2E8F0]/60 shadow-none' : 'bg-white border border-[#CBD5E1] shadow-md shadow-slate-100/50'"
+          >
+            <!-- Card header -->
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-[11px] font-bold text-[#94A3B8] bg-[#F1F5F9] px-2 py-0.5 rounded-md">{{ q.index }} / {{ totalQuestions }}</span>
+              <span class="text-[11px] text-[#94A3B8] bg-[#F1F5F9] px-2 py-0.5 rounded-md">{{ q.groupLabel }}</span>
+              <span v-if="q.required" class="text-[11px] text-[#D97706] bg-[#FEF3C7] px-2 py-0.5 rounded-md">必填</span>
+              <span v-if="isAnswered(q)" class="text-[11px] text-green-600 bg-green-50 px-2 py-0.5 rounded-md ml-auto">✓ 已回答</span>
+            </div>
+
+            <!-- Question text -->
+            <h3 class="text-base md:text-lg font-semibold text-[#0F172A] mb-1.5">{{ q.text }}</h3>
+            <p v-if="q.type === 'SINGLE_CHOICE'" class="text-[#94A3B8] text-xs mb-4">选择最接近的一项</p>
+            <p v-else-if="q.type === 'MULTI_CHOICE'" class="text-[#94A3B8] text-xs mb-4">可多选</p>
+
+            <!-- Options: SINGLE_CHOICE / YES_NO → 卡片式选择 -->
+            <div v-if="isSingleOrYesNo(q)" class="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+              <button
+                v-for="opt in getOptionsList(q)" :key="opt"
+                @click="setAnswer(q.id, opt)"
+                class="text-left px-4 py-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium"
+                :class="getAnswer(q.id) === opt
+                  ? 'border-[#2563EB] bg-[#EFF6FF] text-[#1E3A8A] shadow-sm'
+                  : 'border-[#E2E8F0] bg-white text-[#475569] hover:border-[#93C5FD] hover:bg-[#F8FAFC]'"
+              >
+                <span class="flex items-center justify-between">
+                  {{ opt }}
+                  <svg v-if="getAnswer(q.id) === opt" class="w-4 h-4 text-[#2563EB]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                </span>
+              </button>
+            </div>
+
+            <!-- Options: MULTI_CHOICE → 复选框卡片 -->
+            <div v-else-if="isMultichoice(q)" class="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+              <button
+                v-for="opt in getOptionsList(q)" :key="opt"
+                @click="() => {
+                  const cur = (getAnswer(q.id) as string[]) || [];
+                  setAnswer(q.id, cur.includes(opt) ? cur.filter(v => v !== opt) : [...cur, opt]);
+                }"
+                class="text-left px-4 py-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium"
+                :class="Array.isArray(getAnswer(q.id)) && (getAnswer(q.id) as string[]).includes(opt)
+                  ? 'border-[#2563EB] bg-[#EFF6FF] text-[#1E3A8A] shadow-sm'
+                  : 'border-[#E2E8F0] bg-white text-[#475569] hover:border-[#93C5FD] hover:bg-[#F8FAFC]'"
+              >
+                <span class="flex items-center justify-between">
+                  {{ opt }}
+                  <svg v-if="Array.isArray(getAnswer(q.id)) && (getAnswer(q.id) as string[]).includes(opt)" class="w-4 h-4 text-[#2563EB]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                </span>
+              </button>
+            </div>
+
+            <!-- TEXT / RANGE input -->
+            <input
+              v-else
+              type="text"
+              :value="getAnswer(q.id) || ''"
+              @input="(e: Event) => setAnswer(q.id, (e.target as HTMLInputElement).value)"
+              :placeholder="q.type === 'RANGE' ? '请输入区间或选择' : '请输入'"
+              class="w-full h-[48px] px-4 border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+            />
+          </div>
+        </template>
+
+        <!-- Phone + Submit area -->
+        <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-6 mt-6">
+          <h3 class="font-semibold text-[#0F172A] text-lg mb-1">即将完成</h3>
+          <p class="text-[#64748B] text-sm mb-4">提交后，系统将根据您填写的信息生成初步筛查结果。涉及高风险内容时，将由君册专业人员复核后再展示。</p>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-[#0F172A] mb-1.5">手机号（用于查看报告）</label>
+            <input type="tel" v-model="phone" maxlength="11" placeholder="请输入手机号" class="w-full h-[48px] px-4 border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 outline-none text-sm" />
+          </div>
+          <button
+            @click="handleSubmit"
+            :disabled="submitting || !allRequiredDone"
+            class="w-full h-[50px] rounded-xl font-semibold text-base transition shadow-sm flex items-center justify-center gap-2"
+            :class="allRequiredDone ? 'bg-[#1E3A8A] text-white hover:bg-[#1E40AF]' : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'"
+          >
+            {{ submitting ? '提交中...' : allRequiredDone ? '提交并生成初诊结果' : `还有 ${totalQuestions - answeredCount} 个问题未完成` }}
+          </button>
+          <div v-if="submitError" class="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mt-4">{{ submitError }}</div>
         </div>
       </div>
 
-      <!-- Current Group Questions -->
-      <div v-if="currentGroup" class="bg-white rounded-lg shadow-sm p-5 mb-6">
-        <h2 class="text-lg font-semibold text-gray-700 mb-4">{{ currentGroup.label }}</h2>
-
-        <div v-for="q in currentGroup.questions" :key="q.id" class="mb-5 last:mb-0">
-          <label class="block text-gray-700 font-medium mb-2">
-            {{ q.text }}
-            <span v-if="q.required" class="text-red-500">*</span>
-          </label>
-
-          <!-- SINGLE_CHOICE -->
-          <div v-if="q.type === 'SINGLE_CHOICE'" class="space-y-2">
-            <label
-              v-for="opt in getOptionsList(q)"
-              :key="opt"
-              class="flex items-center gap-2 p-2 rounded border border-gray-200 hover:border-blue-400 cursor-pointer transition"
-              :class="{ 'border-blue-500 bg-blue-50': getAnswer(q.id) === opt }"
-            >
-              <input
-                type="radio"
-                :name="'q-' + q.id"
-                :value="opt"
-                :checked="getAnswer(q.id) === opt"
-                @change="setAnswer(q.id, opt)"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 flex-shrink-0"
-                :class="getAnswer(q.id) === opt ? 'border-blue-500 bg-blue-500' : 'border-gray-300'"
-              >
-                <div v-if="getAnswer(q.id) === opt" class="w-full h-full flex items-center justify-center">
-                  <div class="w-2 h-2 bg-white rounded-full"></div>
+      <!-- ====== 右侧：sticky 进度面板（桌面端） ====== -->
+      <div class="hidden lg:block w-[300px] flex-shrink-0 pt-8">
+        <div class="sticky top-[80px]">
+          <div class="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
+            <div class="bg-[#0F172A] text-white px-5 py-3 text-sm font-semibold">初诊进度</div>
+            <div class="p-5 space-y-4">
+              <!-- Progress ring -->
+              <div class="flex items-center gap-4">
+                <div class="relative w-16 h-16 flex-shrink-0">
+                  <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                    <circle cx="32" cy="32" r="28" fill="none" stroke="#E2E8F0" stroke-width="5"/>
+                    <circle cx="32" cy="32" r="28" fill="none" stroke="#2563EB" stroke-width="5"
+                      :stroke-dasharray="175.9" :stroke-dashoffset="175.9 - (175.9 * answeredCount / totalQuestions)"
+                      stroke-linecap="round" class="transition-all duration-700"/>
+                  </svg>
+                  <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#0F172A]">{{ answeredCount }}/{{ totalQuestions }}</span>
+                </div>
+                <div>
+                  <p class="text-xs text-[#94A3B8]">已完成</p>
+                  <p class="text-sm font-medium text-[#0F172A]">{{ Math.round(answeredCount/totalQuestions*100) }}%</p>
                 </div>
               </div>
-              <span class="text-gray-700">{{ opt }}</span>
-            </label>
+              <!-- Dimension list -->
+              <div>
+                <p class="text-xs text-[#94A3B8] font-medium mb-2 uppercase tracking-wide">覆盖维度</p>
+                <div class="space-y-1.5">
+                  <div v-for="g in questionnaire.groups" :key="g.label" class="flex items-center gap-2 text-xs">
+                    <div class="w-1.5 h-1.5 rounded-full" :class="g.questions.every(q => isAnswered(q as any)) ? 'bg-[#2563EB]' : 'bg-[#CBD5E1]'"></div>
+                    <span :class="g.questions.every(q => isAnswered(q as any)) ? 'text-[#475569]' : 'text-[#94A3B8]'">{{ g.label }}</span>
+                    <span v-if="g.questions.every(q => isAnswered(q as any))" class="text-green-500 ml-auto">✓</span>
+                  </div>
+                </div>
+              </div>
+              <p class="text-[#94A3B8] text-[11px] leading-relaxed pt-2 border-t border-[#F1F5F9]">完成全部问题后，系统将生成初步筛查结果；涉及高风险内容时，将由君册专业人员复核。</p>
+            </div>
           </div>
-
-          <!-- MULTI_CHOICE -->
-          <div v-else-if="q.type === 'MULTI_CHOICE'" class="space-y-2">
-            <label
-              v-for="opt in getOptionsList(q)"
-              :key="opt"
-              class="flex items-center gap-2 p-2 rounded border border-gray-200 hover:border-blue-400 cursor-pointer transition"
-              :class="{ 'border-blue-500 bg-blue-50': Array.isArray(getAnswer(q.id)) && (getAnswer(q.id) as string[]).includes(opt) }"
-            >
-              <input
-                type="checkbox"
-                :value="opt"
-                :checked="Array.isArray(getAnswer(q.id)) && (getAnswer(q.id) as string[]).includes(opt)"
-                @change="(e: Event) => {
-                  const t = e.target as HTMLInputElement;
-                  const cur = (getAnswer(q.id) as string[]) || [];
-                  setAnswer(q.id, t.checked ? [...cur, opt] : cur.filter(v => v !== opt));
-                }"
-                class="w-4 h-4 text-blue-600 rounded border-gray-300"
-              />
-              <span class="text-gray-700">{{ opt }}</span>
-            </label>
-          </div>
-
-          <!-- YES_NO -->
-          <div v-else-if="q.type === 'YES_NO'" class="flex gap-3">
-            <button
-              v-for="opt in getOptionsList(q)"
-              :key="opt"
-              @click="setAnswer(q.id, opt)"
-              class="px-4 py-2 rounded border transition"
-              :class="getAnswer(q.id) === opt
-                ? 'border-blue-500 bg-blue-500 text-white'
-                : 'border-gray-300 text-gray-600 hover:border-blue-400'"
-            >
-              {{ opt }}
-            </button>
-          </div>
-
-          <!-- RANGE / TEXT -->
-          <input
-            v-else
-            type="text"
-            :value="getAnswer(q.id) || ''"
-            @input="(e: Event) => setAnswer(q.id, (e.target as HTMLInputElement).value)"
-            placeholder="请输入"
-            class="w-full border border-gray-300 rounded px-3 py-2 text-gray-700 focus:border-blue-500 focus:outline-none"
-          />
         </div>
       </div>
 
-      <!-- Navigation -->
-      <div class="flex gap-3 mb-6">
-        <button
-          v-if="!isFirstGroup"
-          @click="goPrev"
-          class="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
-        >
-          上一组
-        </button>
-        <button
-          v-if="!isLastGroup"
-          @click="goNext"
-          :disabled="!canProceed"
-          class="flex-1 px-4 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
-        >
-          下一组
-        </button>
-        <button
-          v-if="isLastGroup"
-          @click="handleSubmit"
-          :disabled="submitting"
-          class="flex-1 px-4 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold"
-        >
-          {{ submitting ? '提交中...' : '提交问卷' }}
-        </button>
-      </div>
+    </div>
 
-      <!-- Phone input on last group -->
-      <div v-if="isLastGroup" class="bg-white rounded-lg shadow-sm p-5 mb-6">
-        <label class="block text-gray-700 font-medium mb-2">
-          手机号（用于查看报告）
-        </label>
-        <input
-          type="tel"
-          v-model="phone"
-          placeholder="请输入手机号"
-          maxlength="11"
-          class="w-full border border-gray-300 rounded px-3 py-2 text-gray-700 focus:border-blue-500 focus:outline-none"
-        />
+    <!-- ====== 移动端底部 sticky 进度条 ====== -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#E2E8F0] px-4 py-3 z-40 shadow-lg">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs font-medium text-[#64748B]">已完成 {{ answeredCount }} / {{ totalQuestions }}</span>
+        <span class="text-xs text-[#2563EB] font-semibold">{{ Math.round(answeredCount/totalQuestions*100) }}%</span>
       </div>
-
-      <!-- Submit Error -->
-      <div v-if="submitError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-        {{ submitError }}
+      <div class="w-full h-1.5 bg-[#E2E8F0] rounded-full overflow-hidden">
+        <div class="h-full bg-[#2563EB] rounded-full transition-all duration-500" :style="{width:(answeredCount/totalQuestions*100)+'%'}"></div>
       </div>
     </div>
   </div>
+
+</div>
 </template>
