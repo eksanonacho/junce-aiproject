@@ -2,7 +2,10 @@ import { Injectable, BadRequestException, NotFoundException, Logger } from '@nes
 import { PrismaService } from '../prisma/prisma.service';
 import { DiagnosisService } from '../diagnosis/diagnosis.service';
 import { ReportService } from '../report/report.service';
+import { DocumentService } from '../document/document.service';
 import { SubmitQuestionnaireDto, SubmitAnswerDto } from './dto/submit-questionnaire.dto';
+import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class SubmissionService {
@@ -12,6 +15,7 @@ export class SubmissionService {
     private readonly prisma: PrismaService,
     private readonly diagnosisService: DiagnosisService,
     private readonly reportService: ReportService,
+    private readonly documentService: DocumentService,
   ) {}
 
   async submit(dto: SubmitQuestionnaireDto) {
@@ -208,5 +212,170 @@ export class SubmissionService {
           invalidValues.push({ questionId: question.id, text: question.questionText, reason: '答案不能为空' });
         }
     }
+  }
+
+  // ============================================================
+  // V2 Methods
+  // ============================================================
+
+  async startV2Submission(phone: string | undefined, mode: string) {
+    if (!mode || !['QUICK', 'STANDARD', 'DEEP'].includes(mode.toUpperCase())) {
+      throw new BadRequestException('Invalid mode. Must be QUICK, STANDARD, or DEEP');
+    }
+
+    const diagnosisMode = mode.toUpperCase() as 'QUICK' | 'STANDARD' | 'DEEP';
+
+    // Find V2 questionnaire
+    const v2Questionnaire = await this.prisma.questionnaire.findFirst({
+      where: { version: 'v2', isActive: true },
+    });
+    if (!v2Questionnaire) {
+      throw new BadRequestException('V2 问卷不存在');
+    }
+
+    // Generate access token (plaintext returned once)
+    const plainToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = await bcrypt.hash(plainToken, 10);
+
+    const submission = await this.prisma.submission.create({
+      data: {
+        questionnaireId: v2Questionnaire.id,
+        phone: phone || null,
+        mode: diagnosisMode,
+        status: 'DRAFT',
+        accessTokenHash: tokenHash,
+        accessTokenCreatedAt: new Date(),
+        source: 'WEB',
+      },
+    });
+
+    this.logger.log(`V2 submission started: ${submission.publicId}, mode=${diagnosisMode}`);
+
+    return {
+      submissionPublicId: submission.publicId,
+      submissionAccessToken: plainToken,
+      mode: diagnosisMode,
+      status: 'DRAFT',
+      createdAt: submission.createdAt,
+    };
+  }
+
+  async completeV2Submission(
+    publicId: string,
+    dto: { questionnaireVersion?: string; answers: { questionPublicId: string; value: unknown }[] },
+  ) {
+    const submission = await this.prisma.submission.findUnique({
+      where: { publicId },
+      include: { questionnaire: { include: { questions: true } } },
+    });
+
+    if (!submission) {
+      throw new NotFoundException({ code: 'SUBMISSION_NOT_FOUND', message: '提交记录不存在' });
+    }
+
+    if (!['DRAFT', 'DOCUMENT_UPLOADING'].includes(submission.status)) {
+      throw new BadRequestException({
+        code: 'INVALID_STATUS',
+        message: `当前状态 ${submission.status} 不允许完成提交`,
+      });
+    }
+
+    if (!dto.answers || dto.answers.length === 0) {
+      throw new BadRequestException({ code: 'ANSWERS_EMPTY', message: '答案不能为空' });
+    }
+
+    // Build question map by publicId
+    const questionMap = new Map(
+      submission.questionnaire.questions.map((q) => [q.publicId, q]),
+    );
+
+    // Validate and convert answers
+    const validAnswers: { questionId: number; value: unknown }[] = [];
+    const invalidQuestions: string[] = [];
+
+    for (const answer of dto.answers) {
+      const question = questionMap.get(answer.questionPublicId);
+      if (!question) {
+        invalidQuestions.push(answer.questionPublicId);
+        continue;
+      }
+      validAnswers.push({ questionId: question.id, value: answer.value });
+    }
+
+    if (invalidQuestions.length > 0) {
+      throw new BadRequestException({
+        code: 'INVALID_QUESTION_ID',
+        message: `以下题目不属于该问卷: ${invalidQuestions.join(', ')}`,
+      });
+    }
+
+    // Save answers
+    for (const a of validAnswers) {
+      await this.prisma.answer.create({
+        data: {
+          submissionId: submission.id,
+          questionId: a.questionId,
+          answerValue: a.value as object,
+        },
+      });
+    }
+
+    // Update status
+    await this.prisma.submission.update({
+      where: { publicId },
+      data: {
+        status: 'QUESTIONNAIRE_COMPLETED',
+        submittedAt: new Date(),
+      },
+    });
+
+    // Compute document completeness
+    let completenessScore = 0;
+    if (submission.mode) {
+      try {
+        const result = await this.documentService.computeAndSaveCompleteness(publicId);
+        completenessScore = result.score;
+      } catch (err) {
+        this.logger.warn(`Document completeness computation skipped: ${(err as Error).message}`);
+      }
+    }
+
+    // Run diagnosis
+    let diagnosisStatus = 'NOT_RUN';
+    let reportStatus = 'NOT_RUN';
+    let reportPublicId: string | undefined;
+    let reportAccessToken: string | undefined;
+
+    try {
+      await this.diagnosisService.runDiagnosis(publicId);
+      diagnosisStatus = 'COMPLETED';
+
+      // Generate report
+      try {
+        const reportResult = await this.reportService.generateReport(publicId);
+        reportStatus = 'READY';
+        reportPublicId = reportResult.reportPublicId;
+        reportAccessToken = reportResult.reportAccessToken;
+      } catch (reportErr: unknown) {
+        this.logger.error(`Report generation failed: ${(reportErr as Error).message}`);
+        reportStatus = 'FAILED';
+      }
+    } catch (diagErr: unknown) {
+      this.logger.error(`Diagnosis failed: ${(diagErr as Error).message}`);
+      diagnosisStatus = 'FAILED';
+    }
+
+    return {
+      submissionPublicId: publicId,
+      status: diagnosisStatus === 'COMPLETED' ? 'COMPLETED' : 'FAILED',
+      diagnosisStatus,
+      reportStatus,
+      reportPublicId,
+      reportAccessToken,
+      documentCompletenessScore: completenessScore,
+      message: reportStatus === 'READY'
+        ? '提交成功，报告已生成'
+        : '提交成功，报告生成中',
+    };
   }
 }

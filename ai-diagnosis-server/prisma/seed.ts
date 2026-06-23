@@ -2,6 +2,11 @@ import 'dotenv/config';
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as bcrypt from 'bcryptjs';
+import { seedV2DocumentRequirements } from './seed/v2-document-requirements';
+import { seedV2Questionnaire } from './seed/v2-questionnaire';
+import { seedV2Rules } from './seed/v2-rules';
+import { seedV2RiskScenarios } from './seed/v2-risk-scenarios';
+import { seedV2Disclaimers } from './seed/v2-disclaimers';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env['DATABASE_URL'] }),
@@ -197,6 +202,16 @@ async function main() {
     },
   });
   console.log('  ✅ Disclaimer: 1 created');
+
+  // ============================================================
+  // V2 Seed Data
+  // ============================================================
+  console.log('\n--- V2 Seed ---');
+  await seedV2DocumentRequirements(prisma);
+  const { questions: v2Questions } = await seedV2Questionnaire(prisma);
+  await seedV2Rules(prisma, v2Questions);
+  await seedV2RiskScenarios(prisma);
+  await seedV2Disclaimers(prisma);
 
   console.log('\n🎉 Seed complete!');
 }

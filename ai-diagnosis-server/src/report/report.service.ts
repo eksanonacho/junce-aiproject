@@ -168,22 +168,16 @@ export class ReportService {
       throw new NotFoundException({ code: 'REPORT_NOT_FOUND', message: '报告不存在' });
     }
 
-    // If not customer visible, return limited info
+    // If not customer visible, return PENDING_REVIEW only — no dashboard, no details
     if (!report.customerVisible) {
       return {
-        reportPublicId: report.publicId,
-        reportNumber: report.reportNumber,
-        title: report.title,
-        riskLevel: report.riskLevel,
+        status: 'PENDING_REVIEW',
+        message: '您的初诊结果正在由君册专业人员复核，复核完成后将展示完整报告。',
         reviewStatus: report.reviewStatus,
-        customerVisible: false,
-        message: report.reviewStatus === 'NEED_REVIEW'
-          ? '您的初诊结果包含需要专业人员进一步确认的内容。君册工作人员将结合完整资料进行复核后，再向您说明具体情况。'
-          : '该报告暂时无法查看',
       };
     }
 
-    // Full report
+    // Full report (customerVisible=true)
     const dr = report.diagnosisResult;
     const submission = dr?.submission;
     if (!dr || !submission) {
@@ -219,6 +213,9 @@ export class ReportService {
       })),
       disclaimer: report.disclaimerText,
       htmlContent: report.htmlContent,
+      // V2 additions
+      dashboard: dr.dashboardData || null,
+      documentCompleteness: submission.documentCompletenessDetail || null,
     };
   }
 }

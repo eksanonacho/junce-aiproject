@@ -1,16 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RuleEngineService } from './rule-engine.service';
 import { RiskLevelService } from './risk-level.service';
 import { ServiceRecommendationService } from './service-recommendation.service';
+import { BusinessDashboardService } from '../business-dashboard/business-dashboard.service';
 
 @Injectable()
 export class DiagnosisService {
+  private readonly logger = new Logger(DiagnosisService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly ruleEngine: RuleEngineService,
     private readonly riskLevel: RiskLevelService,
     private readonly serviceRec: ServiceRecommendationService,
+    private readonly dashboardService: BusinessDashboardService,
   ) {}
 
   /**
@@ -126,6 +130,19 @@ export class DiagnosisService {
         where: { id: submission.id },
         data: { status: 'COMPLETED' },
       });
+
+      // 6. Compute V2 business dashboard (if submission has a mode)
+      if (submission.mode) {
+        try {
+          const dashboardData = await this.dashboardService.compute(submission.publicId);
+          await this.prisma.diagnosisResult.update({
+            where: { id: diagnosisResultId },
+            data: { dashboardData: dashboardData as any },
+          });
+        } catch (dashErr) {
+          this.logger.warn(`Dashboard computation skipped: ${(dashErr as Error).message}`);
+        }
+      }
 
       return {
         submissionPublicId: submission.publicId,

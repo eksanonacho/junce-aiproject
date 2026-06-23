@@ -19,6 +19,16 @@ const router = createRouter({
       component: () => import('../pages/SuccessPage.vue'),
     },
     {
+      path: '/diagnosis/start',
+      name: 'diagnosis-start',
+      component: () => import('../pages/DiagnosisStartPage.vue'),
+    },
+    {
+      path: '/diagnosis/upload',
+      name: 'diagnosis-upload',
+      component: () => import('../pages/DocumentUploadPage.vue'),
+    },
+    {
       path: '/report/:publicId',
       name: 'report',
       component: () => import('../pages/ReportPage.vue'),

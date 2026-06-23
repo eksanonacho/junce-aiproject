@@ -5,9 +5,9 @@ import { PrismaService } from '../prisma/prisma.service';
 export class QuestionnaireService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getActiveQuestionnaire() {
+  async getActiveQuestionnaire(version: string = 'v1') {
     const q = await this.prisma.questionnaire.findFirst({
-      where: { isActive: true },
+      where: { isActive: true, version },
       include: {
         questions: {
           orderBy: [{ groupOrder: 'asc' }, { orderInGroup: 'asc' }],

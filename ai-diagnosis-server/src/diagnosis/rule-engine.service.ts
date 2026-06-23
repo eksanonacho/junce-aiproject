@@ -20,8 +20,14 @@ interface RuleCondition {
   operator: string;
   value?: unknown;
   questionId?: number;
+  questionPublicId?: string;
   min?: number;
   max?: number;
+}
+
+interface CompositeConditionBlock {
+  logic: 'AND' | 'OR';
+  conditions: RuleCondition[];
 }
 
 interface RuleRecord {
@@ -31,6 +37,7 @@ interface RuleRecord {
   questionId: number | null;
   triggerCondition: unknown;
   compositeCondition: unknown;
+  conditionMode: string;
   riskLevel: string;
   riskTitle: string;
   riskDescription: string;
@@ -64,14 +71,23 @@ export class RuleEngineService {
       where: { isActive: true },
     });
 
-    // 2. Normalize all answers
+    // 2. Load all questions and build publicId → id map (for composite condition resolution)
+    const allQuestions = await this.prisma.question.findMany({
+      select: { id: true, publicId: true },
+    });
+    const qPublicIdToId = new Map<string, number>();
+    for (const q of allQuestions) {
+      if (q.publicId) qPublicIdToId.set(q.publicId, q.id);
+    }
+
+    // 3. Normalize all answers
     const normalizedAnswers = answers.map((a) => this.normalizeAnswer(a));
 
-    // 3. Match each rule
+    // 4. Match each rule
     const matched: RuleRecord[] = [];
 
     for (const rule of rules) {
-      if (this.matchRule(rule, normalizedAnswers)) {
+      if (this.matchRule(rule, normalizedAnswers, qPublicIdToId)) {
         matched.push(rule);
       }
     }
@@ -111,7 +127,6 @@ export class RuleEngineService {
       const obj = v as Record<string, unknown>;
       if (typeof obj.from === 'number') numericValue = obj.from as number;
       if (typeof obj.value === 'number') numericValue = obj.value as number;
-      // Handle range objects: { from: 100000, to: 500000 }
       if (obj.from !== undefined && obj.to !== undefined) {
         exists = true;
       }
@@ -131,18 +146,28 @@ export class RuleEngineService {
   // Rule matching
   // -------------------------------------
 
-  private matchRule(rule: RuleRecord, answers: NormalizedAnswer[]): boolean {
-    // Composite condition: all sub-conditions must match (AND)
-    if (rule.compositeCondition) {
+  private matchRule(rule: RuleRecord, answers: NormalizedAnswer[], qPublicIdToId?: Map<string, number>): boolean {
+    // V2 COMPOSITE mode: structured { logic, conditions[] }
+    if (rule.conditionMode === 'COMPOSITE' && rule.compositeCondition) {
+      const block = rule.compositeCondition as CompositeConditionBlock;
+      if (!block.conditions || !Array.isArray(block.conditions) || block.conditions.length === 0) return false;
+      const resolvedConditions = block.conditions.map((c) => this.resolveCondition(c, qPublicIdToId));
+      if (block.logic === 'OR') {
+        return resolvedConditions.some((cond) => this.evaluateCondition(cond, answers));
+      }
+      return resolvedConditions.every((cond) => this.evaluateCondition(cond, answers));
+    }
+
+    // Legacy array composite condition (AND only)
+    if (rule.compositeCondition && Array.isArray(rule.compositeCondition)) {
       const conditions = rule.compositeCondition as RuleCondition[];
-      if (!Array.isArray(conditions) || conditions.length === 0) return false;
+      if (conditions.length === 0) return false;
       return conditions.every((cond) => this.evaluateCondition(cond, answers));
     }
 
-    // Single condition
+    // SIMPLE: single triggerCondition
     if (rule.triggerCondition) {
       const cond = rule.triggerCondition as RuleCondition;
-      // If the rule has questionId at the top level, inject it into the condition
       if (rule.questionId && !cond.questionId) {
         cond.questionId = rule.questionId;
       }
@@ -150,6 +175,17 @@ export class RuleEngineService {
     }
 
     return false;
+  }
+
+  /** Resolve questionPublicId → questionId if needed */
+  private resolveCondition(cond: RuleCondition, qPublicIdToId?: Map<string, number>): RuleCondition {
+    if (cond.questionPublicId && qPublicIdToId) {
+      const id = qPublicIdToId.get(cond.questionPublicId);
+      if (id !== undefined) {
+        return { ...cond, questionId: id };
+      }
+    }
+    return cond;
   }
 
   private evaluateCondition(cond: RuleCondition, answers: NormalizedAnswer[]): boolean {

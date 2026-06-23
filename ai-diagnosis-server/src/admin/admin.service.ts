@@ -65,8 +65,14 @@ export class AdminService {
       include: {
         diagnosisResult: {
           include: {
-            submission: { select: { publicId: true, phone: true, submittedAt: true } },
-            findings: true,
+            submission: {
+              select: {
+                publicId: true, phone: true, submittedAt: true,
+                mode: true, documentCompletenessScore: true, documentCompletenessDetail: true,
+                uploadedDocuments: true,
+              },
+            },
+            findings: { include: { rule: { select: { dimension: true, ruleCode: true } } } },
             recommendations: true,
           },
         },
@@ -79,9 +85,53 @@ export class AdminService {
 
     if (!report) throw new NotFoundException({ code: 'REPORT_NOT_FOUND', message: '报告不存在' });
 
+    const submission = report.diagnosisResult?.submission;
+
+    // Build uploaded documents list (without storagePath)
+    const uploadedDocuments = (submission?.uploadedDocuments || []).map((d) => ({
+      publicId: d.publicId,
+      docType: d.docType,
+      originalName: d.originalName,
+      mimeType: d.mimeType,
+      sizeBytes: d.sizeBytes,
+      createdAt: d.createdAt,
+    }));
+
+    // Build dimensionRuleHits from findings
+    const findings = report.diagnosisResult?.findings || [];
+    const dimensionRuleHits: Record<string, { totalRules: number; hitRules: number; findings: unknown[] }> = {};
+    const dimensionSet = new Set<string>();
+    for (const f of findings) {
+      const dim = f.rule?.dimension || '其他';
+      dimensionSet.add(dim);
+      if (!dimensionRuleHits[dim]) {
+        dimensionRuleHits[dim] = { totalRules: 0, hitRules: 0, findings: [] };
+      }
+      dimensionRuleHits[dim].hitRules++;
+      dimensionRuleHits[dim].findings.push({
+        title: f.title,
+        riskLevel: f.riskLevel,
+        description: f.description,
+        suggestion: f.suggestion,
+      });
+    }
+
+    // Count total active rules per dimension
+    const allActiveRules = await this.prisma.diagnosisRule.findMany({
+      where: { isActive: true },
+      select: { dimension: true },
+    });
+    for (const rule of allActiveRules) {
+      const dim = rule.dimension || '其他';
+      if (!dimensionRuleHits[dim]) {
+        dimensionRuleHits[dim] = { totalRules: 0, hitRules: 0, findings: [] };
+      }
+      dimensionRuleHits[dim].totalRules++;
+    }
+
     return {
       reportPublicId: report.publicId,
-      submissionPublicId: report.diagnosisResult?.submission?.publicId || '',
+      submissionPublicId: submission?.publicId || '',
       reportNumber: report.reportNumber,
       riskLevel: report.riskLevel,
       reviewStatus: report.reviewStatus,
@@ -91,7 +141,14 @@ export class AdminService {
         overallRiskLevel: report.diagnosisResult.overallRiskLevel,
         dimensionResults: report.diagnosisResult.dimensionResults,
       } : null,
-      findings: report.diagnosisResult?.findings || [],
+      findings: findings.map((f) => ({
+        riskLevel: f.riskLevel,
+        title: f.title,
+        description: f.description,
+        suggestion: f.suggestion,
+        recommendServices: f.recommendServices,
+        dimension: f.rule?.dimension || null,
+      })),
       recommendations: report.diagnosisResult?.recommendations || [],
       reviewRecords: report.reviewRecords.map((rr) => ({
         id: rr.id,
@@ -101,6 +158,11 @@ export class AdminService {
         reviewerName: rr.reviewer?.realName || '未知',
         createdAt: rr.createdAt.toISOString(),
       })),
+      // V2 additions
+      dashboard: report.diagnosisResult?.dashboardData || null,
+      documentCompleteness: submission?.documentCompletenessDetail || null,
+      uploadedDocuments,
+      dimensionRuleHits,
     };
   }
 

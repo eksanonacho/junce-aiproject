@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { fetchQuestionnaire } from '../api/questionnaire';
 import { submitQuestionnaire } from '../api/submissions';
+import { useDiagnosisStore } from '../stores/diagnosis';
 import type { QuestionnaireResponse, QuestionDto } from '../types/api';
 
 const router = useRouter();
+const route = useRoute();
+const diagnosisStore = useDiagnosisStore();
+const isV2Mode = computed(() => !!diagnosisStore.submissionPublicId || !!route.query.v2);
 function reloadPage() { location.reload(); }
 const loading = ref(true);
 const error = ref('');
@@ -49,8 +53,11 @@ const sectionLabels = computed(() => {
 });
 
 onMounted(async () => {
+  // Restore diagnosis store from session if navigating directly
+  diagnosisStore.restoreFromSession();
   try {
-    questionnaire.value = await fetchQuestionnaire();
+    const version = isV2Mode.value ? 'v2' : undefined;
+    questionnaire.value = await fetchQuestionnaire(version);
   } catch (e: unknown) {
     console.error('Questionnaire load error:', e);
     error.value = (e as { message?: string }).message || '加载问卷失败';
@@ -98,11 +105,24 @@ async function handleSubmit() {
   }
   submitting.value = true; submitError.value = '';
   try {
-    const result = await submitQuestionnaire({
-      questionnaireId: questionnaire.value.id,
-      phone: phone.value || undefined,
-      answers: Object.entries(answers).map(([qId, value]) => ({ questionId: Number(qId), value })),
-    });
+    let result: any;
+
+    if (isV2Mode.value && diagnosisStore.submissionPublicId) {
+      // V2 flow: use diagnosis store complete
+      const answersList = Object.entries(answers).map(([qId, value]) => {
+        const q = flatQuestions.value.find((fq) => fq.id === Number(qId));
+        return { questionPublicId: q?.publicId || '', value };
+      }).filter((a) => a.questionPublicId);
+      result = await diagnosisStore.completeDiagnosis(answersList);
+    } else {
+      // V1 flow: original submit
+      result = await submitQuestionnaire({
+        questionnaireId: questionnaire.value!.id,
+        phone: phone.value || undefined,
+        answers: Object.entries(answers).map(([qId, value]) => ({ questionId: Number(qId), value })),
+      });
+    }
+
     const params = new URLSearchParams({
       submissionPublicId: result.submissionPublicId,
       diagnosisStatus: result.diagnosisStatus || 'NOT_RUN',
@@ -110,6 +130,11 @@ async function handleSubmit() {
     });
     if (result.reportPublicId) params.set('reportPublicId', result.reportPublicId);
     if (result.reportAccessToken) params.set('reportAccessToken', result.reportAccessToken);
+    if (isV2Mode.value) {
+      params.set('v2', 'true');
+      params.set('mode', diagnosisStore.mode);
+      if (result.documentCompletenessScore) params.set('documentCompletenessScore', String(result.documentCompletenessScore));
+    }
     router.push(`/questionnaire/success?${params.toString()}`);
   } catch (e: unknown) {
     submitError.value = (e as { message?: string }).message || '提交失败，请重试';
