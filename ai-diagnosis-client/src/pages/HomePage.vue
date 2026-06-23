@@ -1,6 +1,21 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import JcIcon from '../components/ui/JcIcon.vue';
 function scrollTo(id: string) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); }
+
+const phone = ref('');
+const code = ref('');
+const codeSending = ref(false);
+
+function handleSendCode() {
+  if (!phone.value || phone.value.length < 11) {
+    alert('请先输入正确的手机号');
+    return;
+  }
+  codeSending.value = true;
+  alert('短信验证将在正式接入后启用，当前可直接开始初诊。');
+  setTimeout(() => { codeSending.value = false; }, 3000);
+}
 
 const riskScenes = [
   { icon: 'tax', title: '税务申报异常', concern: '是否存在逾期申报、申报数据异常、历史处罚或税务状态异常。', signals: '多期未申报 · 申报数据波动异常 · 存在税务处罚记录', advice: '建议结合历史申报表、税务状态和账务资料进一步核查。' },
@@ -88,48 +103,64 @@ const services = [
           </button>
         </div>
       </div>
-      <!-- 右侧：大型产品预览面板 -->
-      <div class="flex-shrink-0 w-full max-w-[480px]">
-        <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-[#E2E8F0]/60 overflow-hidden" style="background:linear-gradient(180deg,#fff 0%,#F8FAFC 100%)">
-          <!-- 面板头部 -->
-          <div class="bg-[#0F172A] text-white px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <JcIcon name="report" :size="18" color="#fff" />
-              <span class="font-semibold text-sm">企业初诊报告预览</span>
+      <!-- 右侧：手机号验证码初诊入口卡 -->
+      <div class="flex-shrink-0 w-full max-w-[440px]">
+        <div class="bg-white rounded-3xl shadow-2xl shadow-slate-200/60 border border-[#E2E8F0]/50 overflow-hidden">
+          <!-- 顶部安全标签栏 -->
+          <div class="bg-[#0F172A] text-white px-6 py-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <JcIcon name="secure" :size="16" color="#FBBF24" />
+              <span class="font-semibold text-sm">开始企业财税初诊</span>
             </div>
-            <span class="bg-white/15 text-white text-xs px-2.5 py-0.5 rounded-full">系统生成</span>
+            <span class="bg-white/10 text-white/80 text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1"><JcIcon name="secure" :size="10" color="#FBBF24" /> 安全验证</span>
           </div>
-          <!-- 面板主体 -->
+          <!-- 表单主体 -->
           <div class="p-6 space-y-4">
-            <!-- 风险等级 -->
-            <div class="flex items-center justify-between bg-[#F1F5F9] rounded-xl px-4 py-3">
-              <span class="text-[#64748B] text-sm">总体风险等级</span>
-              <span class="bg-white border border-[#E2E8F0] text-[#475569] text-sm font-medium px-3 py-1 rounded-lg">待评估</span>
-            </div>
-            <!-- 维度 -->
+            <p class="text-[#64748B] text-sm leading-relaxed">手机号验证后进入问卷，初诊结果将用于后续报告查看和人工复核联系。</p>
+            <!-- 手机号 -->
             <div>
-              <p class="text-xs text-[#94A3B8] font-medium mb-2.5 uppercase tracking-wide">覆盖维度</p>
-              <div class="grid grid-cols-2 gap-2">
-                <div class="flex items-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm text-[#475569]"><JcIcon name="tax" :size="15" color="#64748B" /> 税务申报</div>
-                <div class="flex items-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm text-[#475569]"><JcIcon name="invoice" :size="15" color="#64748B" /> 发票与流水</div>
-                <div class="flex items-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm text-[#475569]"><JcIcon name="company" :size="15" color="#64748B" /> 工商状态</div>
-                <div class="flex items-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm text-[#475569]"><JcIcon name="socialSecurity" :size="15" color="#64748B" /> 社保用工</div>
-                <div class="flex items-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm text-[#475569] col-span-2"><JcIcon name="warning" :size="15" color="#64748B" /> 注销风险</div>
+              <label class="block text-sm font-medium text-[#0F172A] mb-1.5">手机号</label>
+              <input
+                v-model="phone"
+                type="tel"
+                maxlength="11"
+                placeholder="请输入用于接收初诊结果的手机号"
+                class="w-full h-[46px] px-4 border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 outline-none transition text-sm"
+              />
+            </div>
+            <!-- 验证码 -->
+            <div>
+              <label class="block text-sm font-medium text-[#0F172A] mb-1.5">验证码</label>
+              <div class="flex gap-2">
+                <input
+                  v-model="code"
+                  type="text"
+                  maxlength="6"
+                  placeholder="请输入验证码"
+                  class="flex-1 h-[46px] px-4 border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 outline-none transition text-sm"
+                />
+                <button
+                  @click="handleSendCode"
+                  :disabled="codeSending"
+                  class="flex-shrink-0 h-[46px] px-4 rounded-xl border border-[#CBD5E1] text-[#475569] text-sm font-medium hover:border-[#2563EB] hover:text-[#2563EB] disabled:opacity-50 transition whitespace-nowrap"
+                >{{ codeSending ? '已发送' : '获取验证码' }}</button>
               </div>
             </div>
-            <!-- 底部 -->
-            <div class="flex items-center justify-between pt-1">
-              <div class="flex items-center gap-1.5 text-xs text-[#94A3B8]"><JcIcon name="secure" :size="12" color="#94A3B8" /> 高风险内容由专业人员复核</div>
-            </div>
+            <!-- TODO: 接入真实短信验证码接口后，在这里调用 sendSmsCode() -->
+            <!-- TODO: 验证通过后再进入问卷 -->
+            <!-- 主按钮 -->
+            <router-link to="/questionnaire" class="block w-full h-[48px] bg-[#1E3A8A] text-white rounded-xl font-semibold text-base hover:bg-[#1E40AF] transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+              开始免费初诊 <JcIcon name="arrowRight" :size="18" color="#fff" />
+            </router-link>
+            <!-- 合规提示 -->
+            <p class="text-[#94A3B8] text-xs leading-relaxed text-center">本系统仅用于企业财税初步筛查，涉及高风险内容时将由君册专业人员复核。</p>
           </div>
         </div>
-        <!-- 浮层小卡片 -->
-        <div class="relative -mt-6 ml-auto mr-4 w-fit bg-white rounded-xl shadow-lg border border-[#E2E8F0] px-4 py-3 flex items-center gap-3 z-10">
-          <div class="w-2 h-2 rounded-full bg-[#D97706] animate-pulse"></div>
-          <div>
-            <p class="text-xs font-semibold text-[#0F172A]">服务建议</p>
-            <p class="text-[11px] text-[#64748B]">税务合规 · 注销前检查 · 社保用工核查</p>
-          </div>
+        <!-- 底部信任标签 -->
+        <div class="flex flex-wrap justify-center gap-2 mt-4">
+          <span class="bg-white/80 border border-[#E2E8F0] rounded-full px-3 py-1 text-[11px] text-[#64748B] flex items-center gap-1"><JcIcon name="secure" :size="11" color="#64748B"/> 信息仅用于初诊</span>
+          <span class="bg-white/80 border border-[#E2E8F0] rounded-full px-3 py-1 text-[11px] text-[#64748B] flex items-center gap-1"><JcIcon name="review" :size="11" color="#64748B"/> 高风险人工复核</span>
+          <span class="bg-white/80 border border-[#E2E8F0] rounded-full px-3 py-1 text-[11px] text-[#64748B] flex items-center gap-1"><JcIcon name="report" :size="11" color="#64748B"/> 报告可留存查看</span>
         </div>
       </div>
     </div>
