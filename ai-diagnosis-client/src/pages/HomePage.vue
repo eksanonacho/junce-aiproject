@@ -73,11 +73,7 @@ const services = [
   </nav>
 
   <!-- ===== 2. Hero 首屏 ===== -->
-  <section class="hero-bg" style="min-height:620px">
-    <!-- 抽象楼宇轮廓 -->
-    <div class="abstract-building b1"></div><div class="abstract-building b2"></div><div class="abstract-building b3"></div><div class="abstract-building b4"></div><div class="abstract-building b5"></div>
-    <!-- 抽象数据线 -->
-    <div class="abstract-line l1"></div><div class="abstract-line l2"></div>
+  <section class="relative overflow-hidden" style="min-height:620px;background:linear-gradient(180deg,#F1F5F9 0%,#F8FAFC 40%,#fff 100%)">
     <div class="relative max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row items-center gap-10 md:gap-6" style="padding-top:88px;padding-bottom:88px">
       <!-- 左侧 -->
       <div class="flex-1 text-center md:text-left max-w-[580px]">
@@ -107,7 +103,7 @@ const services = [
       </div>
       <!-- 右侧：手机号验证码初诊入口卡 -->
       <div class="flex-shrink-0 w-full max-w-[440px]">
-        <div class="bg-white rounded-3xl card-glow border border-[#E2E8F0]/50 overflow-hidden">
+        <div class="bg-white rounded-3xl shadow-2xl shadow-slate-200/60 border border-[#E2E8F0]/50 overflow-hidden">
           <!-- 顶部安全标签栏 -->
           <div class="bg-[#0F172A] text-white px-6 py-3.5 flex items-center justify-between">
             <div class="flex items-center gap-2">
