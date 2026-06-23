@@ -4,6 +4,87 @@
 
 ---
 
+## 2026-06-23 第12步：V2 企业经营初诊系统 — 全量重构
+
+### 做了什么
+
+完成 V2 全量重构，将系统从「AI财税问卷」升级为「君册企业经营初诊系统」。
+
+**后端（9 个新接口 + 5 个模块扩展）**：
+1. **新增 DocumentModule**：资料上传/列表/删除/checklist + 管理员下载。本地文件存储 `uploads/{submissionPublicId}/{documentPublicId}.{ext}`，含 MIME 白名单、20MB 限制、文件名 sanitize、路径穿越防护。
+2. **新增 BusinessDashboardModule**：四维评分引擎。基础分4.0，扣分 = HIGH×1.5 + MEDIUM×0.8 + 文档缺失×0.3-0.8。综合 = 利润×0.25 + 风险×0.35 + 现金流×0.25 + 效率×0.15。自动生成一句话结论 + TOP3 行动建议。
+3. **扩展 SubmissionModule**：POST /start（创建 DRAFT + bcrypt tokenHash）、POST /:id/complete（保存答案→计算完整度→诊断→看板→报告）
+4. **扩展 QuestionnaireModule**：`?version=v2` 返回 65 题九维问卷
+5. **扩展 RuleEngine**：conditionMode = SIMPLE/COMPOSITE。COMPOSITE 支持 `{logic:"AND"|"OR", conditions:[...]}`，每个子条件可用 `questionPublicId`。
+6. **扩展 ReportService**：customerVisible=false → 返回 `{status:"PENDING_REVIEW"}` 禁止返回详情。
+7. **扩展 AdminService**：返回 dashboard + uploadedDocuments + dimensionRuleHits。
+
+**数据库（18 模型 8 枚举）**：
+- 新增 DiagnosisMode 枚举（QUICK/STANDARD/DEEP）
+- 新增 DocumentRequirement + UploadedDocument 模型
+- Submission 新增 5 字段（mode/documentCompletenessScore/documentCompletenessDetail/accessTokenHash/accessTokenCreatedAt）
+- DiagnosisResult 新增 dashboardData (Json?)
+- DiagnosisRule 新增 conditionMode @default("SIMPLE")
+- Question 新增 skipLogic (Json?)
+- SubmissionStatus 追加 3 个值（DRAFT/DOCUMENT_UPLOADING/QUESTIONNAIRE_COMPLETED）
+
+**Seed 数据（65 题 + 55 规则 + 12 场景）**：
+- 拆分结构：prisma/seed/v2-*.ts × 5 个文件，seed.ts 末尾追加调用，V1 不动
+- 65 题 V2 问卷，按九维分组（REVENUE_MARGIN/COST_EXPENSE/CUSTOMER_PRODUCT/TAX_DECLARATION/INVOICE_FUND/SOCIAL_BUSINESS/RECEIVABLE_COLLECTION/INVENTORY_PAYABLE/HUMAN_ASSET_EFFICIENCY），每维 5-8 题
+- 55 条 V2 规则：46 SIMPLE + 9 COMPOSITE（AND 多条件）
+- 12 个风险场景
+
+**前端（9 路由 + 2 新页面 + 5 新组件 + 2 Pinia stores）**：
+- 新增 DiagnosisStartPage（手机号+三档模式选择）
+- 新增 DocumentUploadPage（双栏：资料清单+完整度面板，SVG 环形进度）
+- 新增 BusinessDashboard（ECharts 雷达图 + 综合健康度 + 四维卡片 + 结论 + TOP3）
+- ReportPage 完全重写（9 段式 + PENDING_REVIEW/READY 两态）
+- 新增 Pinia stores：diagnosis.ts + report.ts
+- 新增 API 层：documents.ts + diagnosis.ts
+- client.ts 扩展：支持自定义 headers + FormData + DELETE
+- 安装新依赖：echarts + vue-echarts + @formkit/auto-animate + @vueuse/motion
+
+### 为什么这么做
+
+- V2 Prompt（AI_DIAGNOSIS_V2_FULL_REBUILD_PROMPT.md）明确要求：当前产品像"大学生期末作业"，需要做出"漂亮、专业、完整、能让纪姐觉得超过预期"的系统
+- 资料上传不是装饰，而是提升诊断可信度的核心——告诉客户和君册哪些资料缺失、各维度可信度
+- 四维看板是"老板能看懂的经营诊断"，不是普通文字报告
+- 九维规则模型必须落地——不再等待客户资料，基于行业经验自建 55 条规则
+- customerVisible 门控是合规底线——高风险报告必须人工复核后才能给客户
+- SubmissionAccessToken 保护资料上传安全——敏感资料不能只依赖 publicId
+
+### 踩了哪些坑
+
+1. **HTTP 代理拦截 curl 请求**：本地有 `http_proxy=http://127.0.0.1:7890`，curl 测试全部返回 502。解决：`--noproxy '*'` 或 `unset http_proxy`
+2. **pnpm 安装依赖时代理导致 ECONNRESET**：proxy 影响 npm registry 连接。解决：`unset http_proxy https_proxy`
+3. **Prisma db push --force-reset 被 AI 安全机制拦截**：Prisma 检测到 AI agent 调用危险操作。解决：需用户明确同意 + 设置 `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION` 环境变量
+4. **dotenv 从项目根目录无法找到 .env**：服务器从项目根目录启动，dotenv 默认在 cwd 找 .env，但 .env 在 `ai-diagnosis-server/` 子目录。解决：启动时显式传入环境变量或使用 `DOTENV_CONFIG_PATH`
+5. **Prisma migration drift**：数据库存在未记录在 migration 中的变更（FAILED 枚举值、publicId 列）。解决：使用 `prisma db push` 直接同步
+6. **V1 seed 使用 createMany 不可幂等**：第二次运行 seed 时报 unique constraint 冲突。解决：force-reset 后重新 seed
+7. **CWD 不持久化**：Bash 每次调用都在项目根目录，但 nest build 需要从 server 目录运行。解决：使用 `pnpm --prefix` 或在 subshell 中 cd
+8. **ECharts 导致 ReportPage chunk 1.1MB**：全量引入 ECharts。后续可优化为按需加载
+
+### 验证命令
+
+```bash
+# 数据库验证
+psql "postgresql://a1234@localhost:5432/junce_ai_diagnosis" \
+  -c "SELECT version, count(*) FROM \"Question\" GROUP BY version;" \
+  -c "SELECT count(*) FROM \"DiagnosisRule\";" \
+  -c "SELECT count(*) FROM \"DocumentRequirement\";"
+
+# 后端 build
+pnpm --prefix ai-diagnosis-server build
+
+# 前端 build
+unset http_proxy https_proxy && pnpm --prefix ai-diagnosis-client build
+
+# API 测试
+curl -s --noproxy '*' http://localhost:3001/api/questionnaire?version=v2
+curl -s --noproxy '*' -X POST http://localhost:3001/api/submissions/start \
+  -H "Content-Type: application/json" -d '{"phone":"13800000000","mode":"STANDARD"}'
+
+
 ## 2026-06-22 第11步：Phase 5 — 轻量打印方案、Docker 部署与全量冒烟
 
 ### 做了什么

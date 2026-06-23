@@ -2,7 +2,7 @@
 
 > **这个文件是给谁看的**：前端开发者（及任何需要调用后端的人/AI）。
 > **什么时候用**：开发前端、联调、排查接口问题时。
-> 最后更新：2026-06-22（Phase 1 完成）。
+> 最后更新：2026-06-23（V2 全量重构完成，新增 9 个接口，扩展 4 个已有接口响应）。
 
 ---
 
@@ -427,4 +427,118 @@
 | Report | 3 | ✅ `[06-22]` Phase 3 |
 | Auth | 1 | ✅ `[06-22]` Phase 4 |
 | Admin | 4 | ✅ `[06-22]` Phase 4 |
-| **总计** | **13** | |
+| Document | 7 | ✅ `[06-23]` V2 新增 |
+| **总计** | **22** | |
+
+> V2 新增 9 个接口：Submission(start/complete) + Document(5 客户侧 + 2 后台侧)。
+> V1 13 个接口全部保留，行为不变。
+
+---
+
+## 九、V2 新增接口（2026-06-23）
+
+### 9.1 问卷 V2：GET /api/questionnaire?version=v2
+
+- **方法**：GET
+- **认证**：无需
+- **说明**：V2 问卷 65 题 9 个九维分组。无 `version` 参数默认返回 V1 问卷。
+- **返回结构**：同 §2.1，`version: "v2"`，`title: "君册财税·企业经营初诊（V2）"`
+
+### 9.2 POST /api/submissions/start — V2 创建草稿
+
+- **方法**：POST
+- **认证**：无需
+- **请求体**：`{"phone":"13800000000","mode":"STANDARD"}`（mode: QUICK/STANDARD/DEEP）
+- **成功返回（201）**：
+```json
+{
+  "submissionPublicId": "cmqqmhzkr0000yi9kc8ckzoxf",
+  "submissionAccessToken": "cedec644fd61884bb28b...",
+  "mode": "STANDARD",
+  "status": "DRAFT",
+  "createdAt": "2026-06-23T..."
+}
+```
+- ⚠️ `submissionAccessToken` 明文仅返回一次，数据库存 bcrypt hash。前端存入 sessionStorage。后续请求通过 `X-Submission-Token` header 传递。
+
+### 9.3 POST /api/submissions/:publicId/complete — V2 完成问卷
+
+- **方法**：POST
+- **认证**：`X-Submission-Token` header
+- **请求体**：`{"questionnaireVersion":"v2","answers":[{"questionPublicId":"q_xxx","value":"是"}]}`
+- **成功返回**：
+```json
+{
+  "submissionPublicId": "xxx",
+  "status": "COMPLETED",
+  "diagnosisStatus": "COMPLETED",
+  "reportStatus": "READY",
+  "reportPublicId": "rpt_xxx",
+  "reportAccessToken": "abc123...",
+  "documentCompletenessScore": 68,
+  "message": "提交成功，报告已生成"
+}
+```
+- **状态要求**：submission 必须是 `DRAFT` 或 `DOCUMENT_UPLOADING`
+- **错误**：404 `SUBMISSION_NOT_FOUND` / 400 `INVALID_STATUS`
+
+### 9.4 资料上传接口
+
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| GET | `/api/document-requirements?mode=STANDARD` | 无 | 纯资料模板（19 条），无 uploaded 状态 |
+| GET | `/api/submissions/:id/document-checklist` | X-Submission-Token | 资料清单 + uploaded 状态 + 完整度评分 + 四维可信度 |
+| POST | `/api/submissions/:id/documents` | X-Submission-Token | 上传文件（multipart, docType+file） |
+| GET | `/api/submissions/:id/documents` | X-Submission-Token | 客户侧资料列表 |
+| DELETE | `/api/submissions/:id/documents/:docId` | X-Submission-Token | 客户侧删除文件 |
+| GET | `/api/admin/submissions/:id/documents` | JWT | 后台资料列表 |
+| GET | `/api/admin/documents/:docId/download` | JWT | 后台下载文件流（StreamableFile） |
+
+**文件上传限制**：MIME 白名单 7 种 / 20MB / 文件名 sanitize / 存储路径不返回前端 / 路径穿越防护
+
+**document-checklist 返回格式**：
+```json
+{
+  "mode": "STANDARD", "completenessScore": 68,
+  "uploadedCount": 7, "requiredCount": 10,
+  "missingDocuments": ["银行流水", "应收账款账龄表"],
+  "dimensionConfidence": { "PROFIT": 72, "RISK": 65, "CASH_FLOW": 48, "EFFICIENCY": 55 },
+  "requirements": [
+    { "code": "BANK_STATEMENT", "name": "银行流水", "required": true, "uploaded": false,
+      "affectsDimensions": ["RISK","CASH_FLOW"], "uploadedDocument": null }
+  ]
+}
+```
+
+---
+
+## 十、V2 已有接口响应扩展（2026-06-23）
+
+### 10.1 GET /api/reports/:publicId?token=xxx 响应变更
+
+**customerVisible=false 时（V2 修订）**：
+```json
+{ "status": "PENDING_REVIEW", "message": "您的初诊结果正在由君册专业人员复核...", "reviewStatus": "NEED_REVIEW" }
+```
+禁止返回 dashboard、documentCompleteness、htmlContent 等详情。
+
+**customerVisible=true 时新增字段**：
+- `dashboard`: BusinessDashboard（overallScore/profitScore/riskScore/cashFlowScore/efficiencyScore/conclusion/topActions/dimensionDetails）
+- `documentCompleteness`: DocumentCompletenessDto（mode/completenessScore/uploadedCount/requiredCount/missingDocuments/dimensionConfidence）
+
+### 10.2 GET /api/admin/reports/:publicId 响应扩展
+
+新增字段（无论 customerVisible 均返回）：
+- `dashboard`: BusinessDashboard
+- `documentCompleteness`: DocumentCompletenessDto
+- `uploadedDocuments`: UploadedDocumentDto[]
+- `dimensionRuleHits`: Record<string, { totalRules, hitRules, findings[] }>（九维规则命中明细）
+
+### 10.3 认证方式汇总
+
+| 认证方式 | 使用场景 | 传递方式 |
+|---------|---------|---------|
+| 无认证 | 问卷获取、V1提交、start、health | — |
+| `X-Submission-Token` | V2 资料上传/查看/删除、complete | HTTP Header |
+| `?token=xxx` | 客户侧报告查看 | URL query |
+| JWT `Authorization: Bearer` | 后台所有接口、管理员下载文件 | HTTP Header |
