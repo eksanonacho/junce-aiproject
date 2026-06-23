@@ -38,3 +38,118 @@ body {
   .bg-green-500 { background: #27ae60 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .bg-gray-400 { background: #95a5a6 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ================================================================
+   Phase 5+ — 首页背景系统
+   ================================================================ */
+
+/* --- Hero 背景 --- */
+.hero-bg {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(37, 99, 235, 0.14), transparent 32%),
+    radial-gradient(circle at 18% 78%, rgba(217, 119, 6, 0.08), transparent 30%),
+    linear-gradient(180deg, #f1f5f9 0%, #f8fafc 40%, #fff 100%);
+}
+.hero-bg::before {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(15,23,42,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 88%);
+}
+
+/* --- 抽象楼宇轮廓 (Hero 右侧背景，移动端隐藏) --- */
+.abstract-building {
+  position: absolute; bottom: 0; z-index: 0; pointer-events: none;
+  border-radius: 4px 4px 0 0;
+  background: rgba(148, 163, 184, 0.08);
+}
+.b1 { right: 8%;  width: 36px; height: 140px; }
+.b2 { right: 18%; width: 48px; height: 100px; background: rgba(148, 163, 184, 0.10); }
+.b3 { right: 28%; width: 40px; height: 120px; }
+.b4 { right: 38%; width: 52px; height: 80px;  background: rgba(148, 163, 184, 0.07); }
+.b5 { right: 48%; width: 32px; height: 160px; }
+@media (max-width: 768px) { .abstract-building { display: none; } }
+
+/* --- 抽象数据线 --- */
+.abstract-line {
+  position: absolute; z-index: 0; pointer-events: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(37,99,235,0.12), transparent);
+}
+.l1 { top: 45%; left: 10%; right: 40%; }
+.l2 { top: 62%; left: 30%; right: 10%; background: linear-gradient(90deg, transparent, rgba(217,119,6,0.08), transparent); }
+@media (max-width: 768px) { .abstract-line { display: none; } }
+
+/* --- 卡片背后光影 --- */
+.card-glow {
+  position: relative;
+  box-shadow: 0 24px 70px rgba(15,23,42,0.12), 0 0 0 1px rgba(148,163,184,0.18);
+}
+.card-glow::before {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; z-index: -1;
+  background: linear-gradient(135deg, rgba(37,99,235,0.18), rgba(217,119,6,0.10));
+  opacity: 0.35;
+}
+
+/* --- 为什么选择 AI 初诊 区背景 --- */
+.why-bg {
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 50%, #f1f5f9 100%);
+}
+
+/* --- 风险场景矩阵 背景：报告纸张 + 淡表格线 --- */
+.risk-bg {
+  position: relative;
+  background:
+    linear-gradient(#fff, #fff),
+    repeating-linear-gradient(0deg, rgba(148,163,184,0.06) 0px, rgba(148,163,184,0.06) 1px, transparent 1px, transparent 42px);
+}
+.risk-bg::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(15,23,42,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15,23,42,0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+.risk-bg > * { position: relative; z-index: 1; }
+
+/* --- 初诊流程 背景 --- */
+.flow-bg {
+  position: relative;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(37,99,235,0.10), transparent 30%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
+.flow-bg::before {
+  content: ""; position: absolute; left: 8%; right: 8%; top: 42%; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(37,99,235,0.20), transparent);
+}
+.flow-bg > * { position: relative; z-index: 1; }
+
+/* --- 服务衔接区 背景：白底 + 金色点缀 --- */
+.services-bg {
+  background:
+    radial-gradient(circle at 80% 20%, rgba(217,119,6,0.08), transparent 26%),
+    linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+}
+
+/* --- 底部 CTA 背景：深蓝 + 金色光晕 + 暗网格 --- */
+.cta-bg {
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(217,119,6,0.18), transparent 34%),
+    radial-gradient(circle at 80% 70%, rgba(37,99,235,0.16), transparent 28%),
+    linear-gradient(135deg, #020617 0%, #0f172a 55%, #111827 100%);
+}
+.cta-bg::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+.cta-bg > * { position: relative; z-index: 1; }

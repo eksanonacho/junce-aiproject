@@ -73,9 +73,11 @@ const services = [
   </nav>
 
   <!-- ===== 2. Hero 首屏 ===== -->
-  <section class="relative overflow-hidden" style="min-height:620px;background:radial-gradient(circle at 75% 20%,rgba(37,99,235,0.10),transparent 35%),radial-gradient(circle at 25% 80%,rgba(37,99,235,0.04),transparent 30%),linear-gradient(180deg,#F1F5F9 0%,#F8FAFC 40%,#fff 100%)">
-    <!-- subtle grid -->
-    <div class="absolute inset-0 opacity-[0.03]" style="background-image:linear-gradient(rgba(15,23,42,0.4) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,0.4) 1px,transparent 1px);background-size:40px 40px"></div>
+  <section class="hero-bg" style="min-height:620px">
+    <!-- 抽象楼宇轮廓 -->
+    <div class="abstract-building b1"></div><div class="abstract-building b2"></div><div class="abstract-building b3"></div><div class="abstract-building b4"></div><div class="abstract-building b5"></div>
+    <!-- 抽象数据线 -->
+    <div class="abstract-line l1"></div><div class="abstract-line l2"></div>
     <div class="relative max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row items-center gap-10 md:gap-6" style="padding-top:88px;padding-bottom:88px">
       <!-- 左侧 -->
       <div class="flex-1 text-center md:text-left max-w-[580px]">
@@ -105,7 +107,7 @@ const services = [
       </div>
       <!-- 右侧：手机号验证码初诊入口卡 -->
       <div class="flex-shrink-0 w-full max-w-[440px]">
-        <div class="bg-white rounded-3xl shadow-2xl shadow-slate-200/60 border border-[#E2E8F0]/50 overflow-hidden">
+        <div class="bg-white rounded-3xl card-glow border border-[#E2E8F0]/50 overflow-hidden">
           <!-- 顶部安全标签栏 -->
           <div class="bg-[#0F172A] text-white px-6 py-3.5 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -182,7 +184,7 @@ const services = [
   </section>
 
   <!-- ===== 4. 为什么选择 AI 初诊 ===== -->
-  <section class="bg-[#F1F5F9]/50 border-y border-[#E2E8F0]/30">
+  <section class="why-bg border-y border-[#E2E8F0]/30">
     <div class="max-w-[1200px] mx-auto px-6 py-20">
       <div class="text-center mb-12">
         <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Why AI Diagnosis</p>
@@ -238,7 +240,7 @@ const services = [
   </section>
 
   <!-- ===== 5. 财税风险场景矩阵 ===== -->
-  <section id="scenes" class="bg-white border-y border-[#E2E8F0]/60">
+  <section id="scenes" class="risk-bg border-y border-[#E2E8F0]/60">
     <div class="max-w-[1200px] mx-auto px-6 py-20">
       <div class="text-center mb-12">
         <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Risk Coverage</p>
@@ -263,7 +265,8 @@ const services = [
   </section>
 
   <!-- ===== 6. 初诊流程（5步详情） ===== -->
-  <section id="flow" class="max-w-[1200px] mx-auto px-6 py-20">
+  <section id="flow" class="flow-bg px-6 py-20">
+    <div class="max-w-[1200px] mx-auto">
     <div class="text-center mb-12">
       <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">How It Works</p>
       <h2 class="text-3xl font-bold text-[#0F172A] mb-3">初诊流程</h2>
@@ -286,6 +289,7 @@ const services = [
         </div>
       </div>
     </div>
+    </div><!-- /max-w wrapper -->
   </section>
 
   <!-- ===== 7. 产品闭环展示 ===== -->
@@ -327,7 +331,8 @@ const services = [
   </section>
 
   <!-- ===== 8. 服务衔接区 ===== -->
-  <section id="services" class="max-w-[1200px] mx-auto px-6 py-20">
+  <section id="services" class="services-bg px-6 py-20">
+    <div class="max-w-[1200px] mx-auto">
     <div class="text-center mb-12">
       <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Professional Services</p>
       <h2 class="text-3xl font-bold text-[#0F172A] mb-3">初诊之后，可以衔接君册专业服务</h2>
@@ -339,10 +344,11 @@ const services = [
         <span class="text-xs text-[#475569] font-medium">{{ svc.label }}</span>
       </div>
     </div>
+    </div><!-- /max-w wrapper -->
   </section>
 
   <!-- ===== 9. 底部 CTA ===== -->
-  <section style="background:linear-gradient(180deg,#0F172A 0%,#1E293B 100%)">
+  <section class="cta-bg">
     <div class="max-w-[1200px] mx-auto px-6 py-20 text-center">
       <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mx-auto mb-5">
         <JcIcon name="success" :size="28" color="#FBBF24" />
