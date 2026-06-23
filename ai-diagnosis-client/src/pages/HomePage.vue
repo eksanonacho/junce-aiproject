@@ -73,7 +73,7 @@ const services = [
   </nav>
 
   <!-- ===== 2. Hero 首屏 ===== -->
-  <section class="relative overflow-hidden" style="min-height:620px;background:linear-gradient(180deg,#F1F5F9 0%,#F8FAFC 40%,#fff 100%)">
+  <section class="relative overflow-hidden bg-cover bg-center" style="min-height:620px;background-image:url('/hero-bg.png')">
     <div class="relative max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row items-center gap-10 md:gap-6" style="padding-top:88px;padding-bottom:88px">
       <!-- 左侧 -->
       <div class="flex-1 text-center md:text-left max-w-[580px]">
