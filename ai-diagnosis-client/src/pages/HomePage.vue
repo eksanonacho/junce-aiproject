@@ -52,7 +52,7 @@ const services = [
 </script>
 
 <template>
-<div class="min-h-screen bg-[#F8FAFC] text-[#1E293B] font-sans overflow-x-hidden">
+<div class="min-h-screen bg-[#F2F5FC] text-[#1E293B] font-sans overflow-x-hidden">
 
   <!-- ===== 1. 导航栏 ===== -->
   <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-[#E2E8F0]/60" style="height:64px">
@@ -289,7 +289,7 @@ const services = [
   </section>
 
   <!-- ===== 7. 产品闭环展示 ===== -->
-  <section class="bg-white border-y border-[#E2E8F0]/60">
+  <section class="bg-[#FAFBFD] border-y border-[#E2E8F0]/40">
     <div class="max-w-[1200px] mx-auto px-6 py-20">
       <div class="text-center mb-12">
         <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Closed Loop</p>
@@ -344,7 +344,7 @@ const services = [
   </section>
 
   <!-- ===== 9. 底部 CTA ===== -->
-  <section class="cta-bg">
+  <section class="cta-bg bg-cover bg-center" style="background-image:url('/cta-bg.png')">
     <div class="max-w-[1200px] mx-auto px-6 py-20 text-center">
       <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mx-auto mb-5">
         <JcIcon name="success" :size="28" color="#FBBF24" />
