@@ -33,10 +33,8 @@ const flowSteps = [
   <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-[#E2E8F0]">
     <div class="max-w-[1180px] mx-auto px-6 h-14 flex items-center justify-between">
       <router-link to="/" class="flex items-center gap-2.5 no-underline">
-        <div class="w-8 h-8 rounded-lg bg-[#1E3A8A] flex items-center justify-center">
-          <JcIcon name="company" :size="16" color="#fff" :stroke-width="2.5" />
-        </div>
-        <span class="font-semibold text-[#0F172A] text-base">君册财税<span class="text-[#475569] font-normal ml-1.5 text-sm hidden sm:inline">企业财税 AI 初诊</span></span>
+        <img src="/logo.png" alt="君册财税" class="h-8 w-auto" />
+        <span class="text-[#475569] font-normal text-sm hidden sm:inline">企业财税 AI 初诊</span>
       </router-link>
       <div class="flex items-center gap-6">
         <a @click="scrollToFlow" class="text-sm text-[#475569] hover:text-[#1E3A8A] cursor-pointer hidden sm:block">初诊流程</a>
