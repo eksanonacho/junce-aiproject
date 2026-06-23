@@ -3,19 +3,20 @@ import JcIcon from '../components/ui/JcIcon.vue';
 function scrollTo(id: string) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); }
 
 const riskScenes = [
-  { icon: 'tax', title: '税务申报异常', desc: '关注是否存在逾期申报、申报数据异常或历史处罚记录。' },
-  { icon: 'history', title: '长期零申报', desc: '关注企业是否存在持续经营但长期零申报的情况。' },
-  { icon: 'invoice', title: '发票与流水风险', desc: '关注发票开具、银行流水和实际经营之间是否需要进一步核查。' },
-  { icon: 'socialSecurity', title: '社保用工问题', desc: '关注员工社保缴纳、劳务用工和人员结构是否存在隐患。' },
-  { icon: 'company', title: '工商变更 / 异常', desc: '关注法人、股东、地址变更及工商异常状态对后续经营的影响。' },
-  { icon: 'warning', title: '注销前风险', desc: '关注注销前账务、税务、发票和工商资料是否完整，避免注销受阻。' },
+  { icon: 'tax', title: '税务申报异常', concern: '是否存在逾期申报、申报数据异常、历史处罚或税务状态异常。', signals: '多期未申报 · 申报数据波动异常 · 存在税务处罚记录', advice: '建议结合历史申报表、税务状态和账务资料进一步核查。' },
+  { icon: 'history', title: '长期零申报', concern: '企业是否存在持续经营迹象，但长期进行零申报。', signals: '仍有经营流水 · 仍在开票或收款 · 员工或办公成本持续存在', advice: '建议核对实际经营、银行流水和申报口径是否一致。' },
+  { icon: 'invoice', title: '发票与流水风险', concern: '发票开具、银行流水和实际业务之间是否需要进一步核查。', signals: '发票金额与流水不匹配 · 大额往来缺少业务说明 · 进销项结构异常', advice: '建议结合合同、发票、流水和账务凭证进行复核。' },
+  { icon: 'socialSecurity', title: '社保用工问题', concern: '员工社保、劳务用工和人员结构是否存在潜在隐患。', signals: '有员工但未缴社保 · 劳务人员比例较高 · 工资与个税、社保数据不一致', advice: '建议结合员工花名册、工资表、社保记录和个税申报进一步确认。' },
+  { icon: 'company', title: '工商变更 / 异常', concern: '法人、股东、地址变更及工商异常状态是否影响后续经营。', signals: '频繁变更法人或股东 · 注册地址异常 · 工商年报异常', advice: '建议结合工商档案、年报记录和当前经营情况进一步核查。' },
+  { icon: 'warning', title: '注销前风险', concern: '企业注销前账务、税务、发票和工商资料是否完整。', signals: '账务资料不完整 · 仍有未处理发票 · 税务状态未清理', advice: '建议在注销前完成税务、账务、工商和发票资料的系统核查。' },
 ];
 
 const flows = [
-  { num: '01', icon: 'company', title: '填写企业信息', desc: '3 分钟完成标准化问卷，覆盖税务、工商、社保等关键维度' },
-  { num: '02', icon: 'analysis', title: '系统初步筛查', desc: '基于规则引擎自动匹配风险场景，生成结构化诊断结果' },
-  { num: '03', icon: 'report', title: '生成初诊结果', desc: '自动输出风险等级、问题明细和服务建议，支持打印留存' },
-  { num: '04', icon: 'review', title: '专业人员复核跟进', desc: '中高风险报告由君册专业人员复核确认后跟进服务' },
+  { num: '01', icon: 'company', title: '填写企业信息', input: '企业基础信息、经营情况、财税状态、当前诉求', process: '客户通过结构化问卷提交企业当前情况，减少后续反复沟通。', output: '形成客户初诊档案' },
+  { num: '02', icon: 'analysis', title: '系统规则筛查', input: '客户提交的问卷答案', process: '系统根据预设规则识别常见风险场景，并进行初步风险分层。', output: '生成 LOW / MEDIUM / HIGH 初步等级' },
+  { num: '03', icon: 'report', title: '生成初诊报告', input: '风险分层、命中场景、服务建议', process: '低风险客户可查看初诊报告；中高风险客户进入待复核状态。', output: '生成客户侧初诊报告' },
+  { num: '04', icon: 'review', title: '人工复核确认', input: '中高风险报告、客户提交信息、命中风险点', process: '君册人员在后台查看报告内容，决定通过、驳回或修改报告。', output: '形成复核记录和客户可见状态' },
+  { num: '05', icon: 'service', title: '服务跟进转化', input: '客户初诊结果和复核意见', process: '根据客户风险类型和当前诉求，衔接代理记账、税务合规、注销清算、工商变更等服务。', output: '进入后续沟通和服务跟进' },
 ];
 
 const mockLeads = [
@@ -150,36 +151,57 @@ const services = [
   </section>
 
   <!-- ===== 4. 为什么选择 AI 初诊 ===== -->
-  <section class="max-w-[1200px] mx-auto px-6 py-20">
-    <div class="text-center mb-12">
-      <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Why AI Diagnosis</p>
-      <h2 class="text-3xl font-bold text-[#0F172A] mb-3">为什么选择 AI 初诊</h2>
-      <p class="text-[#64748B] max-w-lg mx-auto">不是替代专业判断，而是帮助更高效地完成初步筛查与客户分层</p>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="group rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1" style="background:linear-gradient(180deg,#fff 0%,#F8FAFC 100%);border:1px solid rgba(148,163,184,0.20);box-shadow:0 18px 45px rgba(15,23,42,0.05)">
-        <div class="w-12 h-12 rounded-2xl bg-[#EFF6FF] border border-[#DBEAFE] flex items-center justify-center mb-5 group-hover:scale-105 transition">
-          <JcIcon name="company" :size="24" />
-        </div>
-        <div class="text-xs text-[#1E3A8A] font-semibold mb-2 tracking-wide uppercase">Step 1</div>
-        <h3 class="font-bold text-[#0F172A] text-lg mb-2">把客户信息问清楚</h3>
-        <p class="text-[#64748B] text-sm leading-relaxed">通过标准化问题收集企业基础信息、经营状态和当前诉求，减少反复沟通，让后续服务更高效。</p>
+  <section class="bg-[#F1F5F9]/50 border-y border-[#E2E8F0]/30">
+    <div class="max-w-[1200px] mx-auto px-6 py-20">
+      <div class="text-center mb-12">
+        <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Why AI Diagnosis</p>
+        <h2 class="text-3xl font-bold text-[#0F172A] mb-3">为什么需要 AI 初诊</h2>
+        <p class="text-[#64748B] max-w-xl mx-auto">不是替代专业判断，而是把客户咨询前的信息收集、风险初筛和服务分层先标准化。</p>
       </div>
-      <div class="group rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1" style="background:linear-gradient(180deg,#fff 0%,#F8FAFC 100%);border:1px solid rgba(148,163,184,0.20);box-shadow:0 18px 45px rgba(15,23,42,0.05)">
-        <div class="w-12 h-12 rounded-2xl bg-[#EFF6FF] border border-[#DBEAFE] flex items-center justify-center mb-5 group-hover:scale-105 transition">
-          <JcIcon name="risk" :size="24" />
+      <!-- 对比区 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div class="bg-white rounded-2xl p-6 border border-[#E2E8F0]/60" style="box-shadow:0 12px 30px rgba(15,23,42,0.03)">
+          <h3 class="font-bold text-[#0F172A] mb-4 flex items-center gap-2"><JcIcon name="warning" :size="18" color="#94A3B8" /> 传统咨询常见问题</h3>
+          <div class="space-y-3 text-sm text-[#64748B]">
+            <div class="flex items-start gap-2"><span class="text-[#CBD5E1] mt-0.5">—</span>客户情况靠微信零散沟通，信息不完整</div>
+            <div class="flex items-start gap-2"><span class="text-[#CBD5E1] mt-0.5">—</span>员工反复询问企业基础信息，效率低</div>
+            <div class="flex items-start gap-2"><span class="text-[#CBD5E1] mt-0.5">—</span>客户风险轻重难以快速判断，跟进优先级不清晰</div>
+            <div class="flex items-start gap-2"><span class="text-[#CBD5E1] mt-0.5">—</span>敏感问题容易直接沟通，缺少统一话术和复核边界</div>
+          </div>
         </div>
-        <div class="text-xs text-[#1E3A8A] font-semibold mb-2 tracking-wide uppercase">Step 2</div>
-        <h3 class="font-bold text-[#0F172A] text-lg mb-2">把常见风险先筛出来</h3>
-        <p class="text-[#64748B] text-sm leading-relaxed">围绕申报、发票、工商、社保、注销等场景进行初步筛查，帮助君册快速判断客户情况。</p>
+        <div class="rounded-2xl p-6 border border-[#DBEAFE]" style="background:linear-gradient(180deg,#EFF6FF 0%,#F8FAFC 100%);box-shadow:0 12px 30px rgba(37,99,235,0.06)">
+          <h3 class="font-bold text-[#0F172A] mb-4 flex items-center gap-2"><JcIcon name="success" :size="18" color="#2563EB" /> AI 初诊带来的改进</h3>
+          <div class="space-y-3 text-sm text-[#1E3A8A]">
+            <div class="flex items-start gap-2"><JcIcon name="success" :size="14" color="#2563EB" class="mt-0.5 flex-shrink-0" />通过结构化问卷一次性收集关键资料</div>
+            <div class="flex items-start gap-2"><JcIcon name="success" :size="14" color="#2563EB" class="mt-0.5 flex-shrink-0" />系统按规则完成初步风险分层</div>
+            <div class="flex items-start gap-2"><JcIcon name="success" :size="14" color="#2563EB" class="mt-0.5 flex-shrink-0" />低风险自动生成初诊结果，高风险进入人工复核</div>
+            <div class="flex items-start gap-2"><JcIcon name="success" :size="14" color="#2563EB" class="mt-0.5 flex-shrink-0" />后台沉淀客户线索、风险等级和复核记录</div>
+          </div>
+        </div>
       </div>
-      <div class="group rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1" style="background:linear-gradient(180deg,#fff 0%,#F8FAFC 100%);border:1px solid rgba(148,163,184,0.20);box-shadow:0 18px 45px rgba(15,23,42,0.05)">
-        <div class="w-12 h-12 rounded-2xl bg-[#FEF3C7] border border-[#FDE68A] flex items-center justify-center mb-5 group-hover:scale-105 transition">
-          <JcIcon name="review" :size="24" color="#D97706" />
+      <!-- 3 张核心能力卡片 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="group rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1 bg-white" style="border:1px solid rgba(148,163,184,0.20);box-shadow:0 18px 45px rgba(15,23,42,0.05)">
+          <div class="w-12 h-12 rounded-2xl bg-[#EFF6FF] border border-[#DBEAFE] flex items-center justify-center mb-5 group-hover:scale-105 transition"><JcIcon name="company" :size="24" /></div>
+          <div class="text-xs text-[#1E3A8A] font-semibold mb-2 tracking-wide uppercase">Capability 1</div>
+          <h3 class="font-bold text-[#0F172A] text-lg mb-2">信息结构化</h3>
+          <p class="text-[#64748B] text-sm leading-relaxed mb-3">围绕企业基础信息、经营状态、申报情况、发票流水、社保用工和当前诉求设计问题，减少人工反复沟通。</p>
+          <div class="flex flex-wrap gap-1.5"><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">企业画像</span><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">财税状态</span><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">当前诉求</span></div>
         </div>
-        <div class="text-xs text-[#92400E] font-semibold mb-2 tracking-wide uppercase">Step 3</div>
-        <h3 class="font-bold text-[#0F172A] text-lg mb-2">把高风险内容先拦住</h3>
-        <p class="text-[#64748B] text-sm leading-relaxed">涉及敏感或高风险内容时，报告不会直接展示给客户，而是进入专业人员复核流程，保障合规底线。</p>
+        <div class="group rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1 bg-white" style="border:1px solid rgba(148,163,184,0.20);box-shadow:0 18px 45px rgba(15,23,42,0.05)">
+          <div class="w-12 h-12 rounded-2xl bg-[#EFF6FF] border border-[#DBEAFE] flex items-center justify-center mb-5 group-hover:scale-105 transition"><JcIcon name="risk" :size="24" /></div>
+          <div class="text-xs text-[#1E3A8A] font-semibold mb-2 tracking-wide uppercase">Capability 2</div>
+          <h3 class="font-bold text-[#0F172A] text-lg mb-2">风险初步分层</h3>
+          <p class="text-[#64748B] text-sm leading-relaxed mb-3">根据客户填写内容，系统对常见财税、工商、社保和注销场景进行规则筛查，形成低、中、高风险初步分层。</p>
+          <div class="flex flex-wrap gap-1.5"><span class="bg-green-50 text-green-700 text-[11px] px-2 py-0.5 rounded-full">LOW</span><span class="bg-yellow-50 text-yellow-700 text-[11px] px-2 py-0.5 rounded-full">MEDIUM</span><span class="bg-red-50 text-red-700 text-[11px] px-2 py-0.5 rounded-full">HIGH</span></div>
+        </div>
+        <div class="group rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1 bg-white" style="border:1px solid rgba(148,163,184,0.20);box-shadow:0 18px 45px rgba(15,23,42,0.05)">
+          <div class="w-12 h-12 rounded-2xl bg-[#FEF3C7] border border-[#FDE68A] flex items-center justify-center mb-5 group-hover:scale-105 transition"><JcIcon name="review" :size="24" color="#D97706" /></div>
+          <div class="text-xs text-[#92400E] font-semibold mb-2 tracking-wide uppercase">Capability 3</div>
+          <h3 class="font-bold text-[#0F172A] text-lg mb-2">人工复核兜底</h3>
+          <p class="text-[#64748B] text-sm leading-relaxed mb-3">涉及敏感或高风险内容时，报告不会直接展示给客户，而是进入君册内部复核流程，保障合规底线。</p>
+          <div class="flex flex-wrap gap-1.5"><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">待复核</span><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">已通过</span><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">已驳回</span></div>
+        </div>
       </div>
     </div>
   </section>
@@ -189,39 +211,48 @@ const services = [
     <div class="max-w-[1200px] mx-auto px-6 py-20">
       <div class="text-center mb-12">
         <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Risk Coverage</p>
-        <h2 class="text-3xl font-bold text-[#0F172A] mb-3">覆盖财税风险场景</h2>
-        <p class="text-[#64748B] max-w-lg mx-auto">系统可初步关注以下常见财税风险类型，具体判断需结合完整资料</p>
+        <h2 class="text-3xl font-bold text-[#0F172A] mb-3">覆盖企业常见财税风险场景</h2>
+        <p class="text-[#64748B] max-w-xl mx-auto">系统仅作初步筛查，具体判断需要结合账务、申报、发票、流水、工商和社保资料进一步确认。</p>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <div v-for="s in riskScenes" :key="s.title" class="group rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 cursor-default" style="background:linear-gradient(180deg,#fff 0%,#F8FAFC 100%);border:1px solid rgba(148,163,184,0.18);box-shadow:0 12px 30px rgba(15,23,42,0.04)">
-          <div class="w-10 h-10 rounded-xl bg-[#EFF6FF] border border-[#DBEAFE] flex items-center justify-center mb-4 group-hover:bg-[#DBEAFE] transition">
-            <JcIcon :name="s.icon" :size="20" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+        <div v-for="s in riskScenes" :key="s.title" class="group rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 cursor-default bg-white" style="border:1px solid rgba(148,163,184,0.18);box-shadow:0 12px 30px rgba(15,23,42,0.04);min-height:220px">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[#EFF6FF] border border-[#DBEAFE] flex items-center justify-center group-hover:bg-[#DBEAFE] transition flex-shrink-0"><JcIcon :name="s.icon" :size="20" /></div>
+            <h4 class="font-semibold text-[#0F172A] text-base">{{ s.title }}</h4>
           </div>
-          <h4 class="font-semibold text-[#0F172A] mb-1.5">{{ s.title }}</h4>
-          <p class="text-[#64748B] text-sm leading-relaxed">{{ s.desc }}</p>
+          <div class="space-y-2.5 text-sm">
+            <div><span class="text-[#94A3B8] text-xs font-medium uppercase tracking-wide">关注问题</span><p class="text-[#475569] mt-0.5 leading-relaxed">{{ s.concern }}</p></div>
+            <div><span class="text-[#94A3B8] text-xs font-medium uppercase tracking-wide">常见信号</span><p class="text-[#64748B] mt-0.5 leading-relaxed text-[13px]">{{ s.signals }}</p></div>
+            <div><span class="text-[#1E3A8A] text-xs font-medium uppercase tracking-wide">建议方向</span><p class="text-[#475569] mt-0.5 leading-relaxed text-[13px]">{{ s.advice }}</p></div>
+          </div>
         </div>
       </div>
-      <p class="text-center text-[#94A3B8] text-xs mt-6">以上为系统可初步关注的场景类型，不构成最终判断</p>
+      <p class="text-center text-[#94A3B8] text-xs mt-8 max-w-xl mx-auto leading-relaxed">以上场景仅用于初步筛查，不代表最终风险结论。具体问题需由专业人员结合完整资料复核。</p>
     </div>
   </section>
 
-  <!-- ===== 6. 初诊流程 ===== -->
+  <!-- ===== 6. 初诊流程（5步详情） ===== -->
   <section id="flow" class="max-w-[1200px] mx-auto px-6 py-20">
     <div class="text-center mb-12">
       <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">How It Works</p>
       <h2 class="text-3xl font-bold text-[#0F172A] mb-3">初诊流程</h2>
-      <p class="text-[#64748B]">四步完成企业财税初步筛查</p>
+      <p class="text-[#64748B]">从客户填写到内部复核，形成可追踪的初诊闭环</p>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-      <div v-for="(s, i) in flows" :key="i" class="relative text-center group">
-        <!-- connector line (desktop) -->
-        <div v-if="i < flows.length - 1" class="hidden md:block absolute top-9 left-[calc(50%+40px)] w-[calc(100%-80px)] h-px bg-[#E2E8F0]"></div>
-        <div class="w-[72px] h-[72px] rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-105 transition" :class="i===3?'bg-[#FEF3C7] border border-[#FDE68A]':'bg-[#EFF6FF] border border-[#DBEAFE]'">
-          <JcIcon :name="s.icon" :size="28" :color="i===3?'#D97706':'#2563EB'" />
+    <!-- 步骤卡片 -->
+    <div class="space-y-4 max-w-3xl mx-auto">
+      <div v-for="(s, i) in flows" :key="i" class="group rounded-2xl p-5 md:p-6 transition-all duration-300 hover:-translate-y-0.5 bg-white" :class="i===3?'border border-[#FDE68A]':'border border-[#E2E8F0]/60'" :style="i===3?'background:linear-gradient(180deg,#FFFBEB 0%,#fff 100%);box-shadow:0 12px 30px rgba(217,119,6,0.06)':'box-shadow:0 12px 30px rgba(15,23,42,0.03)'">
+        <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-5 mb-3">
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold" :class="i===3?'bg-[#FEF3C7] text-[#92400E]':'bg-[#EFF6FF] text-[#1E3A8A]'">{{ s.num }}</div>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="i===3?'bg-[#FEF3C7]':'bg-[#EFF6FF]'"><JcIcon :name="s.icon" :size="16" :color="i===3?'#D97706':'#2563EB'" /></div>
+            <h4 class="font-bold text-[#0F172A]">{{ s.title }}</h4>
+          </div>
         </div>
-        <div class="text-xs font-bold text-[#94A3B8] mb-1">{{ s.num }}</div>
-        <h4 class="font-semibold text-[#0F172A] mb-1">{{ s.title }}</h4>
-        <p class="text-[#94A3B8] text-sm">{{ s.desc }}</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm ml-0 md:ml-[88px]">
+          <div class="bg-[#F8FAFC] rounded-xl px-4 py-3"><span class="text-[#94A3B8] text-xs font-medium uppercase tracking-wide">输入</span><p class="text-[#475569] mt-1 leading-relaxed">{{ s.input }}</p></div>
+          <div class="bg-[#EFF6FF] rounded-xl px-4 py-3"><span class="text-[#1E3A8A] text-xs font-medium uppercase tracking-wide">系统处理</span><p class="text-[#475569] mt-1 leading-relaxed">{{ s.process }}</p></div>
+          <div class="bg-[#F0FDF4] rounded-xl px-4 py-3"><span class="text-[#16A34A] text-xs font-medium uppercase tracking-wide">输出</span><p class="text-[#475569] mt-1 leading-relaxed">{{ s.output }}</p></div>
+        </div>
       </div>
     </div>
   </section>
