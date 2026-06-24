@@ -1,7 +1,7 @@
 import { apiPost } from './client';
 import type { StartDiagnosisResponse, CompleteDiagnosisResponse } from '../types/api';
 
-const BASE = '/api/submissions';
+const BASE = '/submissions';
 
 export function startDiagnosis(phone: string, mode: string): Promise<StartDiagnosisResponse> {
   return apiPost<StartDiagnosisResponse>(`${BASE}/start`, { phone, mode });

@@ -65,7 +65,7 @@ const services = [
         <a @click="scrollTo('scenes')" class="text-[#475569] hover:text-[#1E3A8A] cursor-pointer hidden md:block">覆盖场景</a>
         <a @click="scrollTo('flow')" class="text-[#475569] hover:text-[#1E3A8A] cursor-pointer hidden md:block">初诊流程</a>
         <a @click="scrollTo('services')" class="text-[#475569] hover:text-[#1E3A8A] cursor-pointer hidden md:block">衔接服务</a>
-        <router-link to="/questionnaire" class="bg-[#1E3A8A] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#1E40AF] transition inline-flex items-center gap-1.5 shadow-sm">
+        <router-link to="/diagnosis/start" class="bg-[#1E3A8A] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#1E40AF] transition inline-flex items-center gap-1.5 shadow-sm">
           开始初诊 <JcIcon name="arrowRight" :size="14" color="#fff" />
         </router-link>
       </div>
@@ -93,7 +93,7 @@ const services = [
           <span class="inline-flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-full px-3 py-1"><JcIcon name="report" :size="14" color="#64748B"/> 报告可打印留存</span>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-          <router-link to="/questionnaire" class="inline-flex items-center gap-2 bg-[#1E3A8A] text-white px-7 py-3.5 rounded-xl font-semibold text-base hover:bg-[#1E40AF] transition shadow-lg shadow-blue-500/20">
+          <router-link to="/diagnosis/start" class="inline-flex items-center gap-2 bg-[#1E3A8A] text-white px-7 py-3.5 rounded-xl font-semibold text-base hover:bg-[#1E40AF] transition shadow-lg shadow-blue-500/20">
             开始免费初诊 <JcIcon name="arrowRight" :size="18" color="#fff" />
           </router-link>
           <button @click="scrollTo('flow')" class="inline-flex items-center gap-2 border border-[#CBD5E1] text-[#475569] px-7 py-3.5 rounded-xl font-medium text-base hover:border-[#94A3B8] hover:bg-white transition">
@@ -147,7 +147,7 @@ const services = [
             <!-- TODO: 接入真实短信验证码接口后，在这里调用 sendSmsCode() -->
             <!-- TODO: 验证通过后再进入问卷 -->
             <!-- 主按钮 -->
-            <router-link to="/questionnaire" class="block w-full h-[48px] bg-[#1E3A8A] text-white rounded-xl font-semibold text-base hover:bg-[#1E40AF] transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+            <router-link to="/diagnosis/start" class="block w-full h-[48px] bg-[#1E3A8A] text-white rounded-xl font-semibold text-base hover:bg-[#1E40AF] transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
               开始免费初诊 <JcIcon name="arrowRight" :size="18" color="#fff" />
             </router-link>
             <!-- 合规提示 -->
@@ -351,7 +351,7 @@ const services = [
       </div>
       <h2 class="text-3xl font-bold text-white mb-3">现在开始企业财税初诊</h2>
       <p class="text-[#94A3B8] max-w-lg mx-auto mb-8">填写基础信息后，系统将生成初步筛查结果。涉及高风险内容时，将由君册专业人员进一步复核。</p>
-      <router-link to="/questionnaire" class="inline-flex items-center gap-2 bg-white text-[#0F172A] px-8 py-3.5 rounded-xl font-semibold text-base hover:bg-[#F1F5F9] transition shadow-lg">
+      <router-link to="/diagnosis/start" class="inline-flex items-center gap-2 bg-white text-[#0F172A] px-8 py-3.5 rounded-xl font-semibold text-base hover:bg-[#F1F5F9] transition shadow-lg">
         开始免费初诊 <JcIcon name="arrowRight" :size="18" color="#0F172A" />
       </router-link>
       <div class="flex items-start gap-2 justify-center mt-10 max-w-md mx-auto text-[#64748B] text-xs leading-relaxed">

@@ -1,7 +1,7 @@
 import { apiGet, apiPost, apiDelete } from './client';
 import type { DocumentChecklistResponse, UploadedDocumentDto } from '../types/api';
 
-const BASE = '/api';
+const BASE = '';
 
 export function fetchDocumentChecklist(submissionPublicId: string, token: string): Promise<DocumentChecklistResponse> {
   return apiGet<DocumentChecklistResponse>(
