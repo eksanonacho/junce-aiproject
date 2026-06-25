@@ -29,16 +29,18 @@ const flatQuestions = computed<FlatQ[]>(() => {
   );
 });
 
-// V2: filter by mode using skipLogic.hideInModes
+// V2: filter by mode using skipLogic.hideInModes, then re-index
 const visibleQuestions = computed<FlatQ[]>(() => {
   if (!isV2Mode.value) return flatQuestions.value;
   const mode = diagnosisStore.mode || 'STANDARD';
-  return flatQuestions.value.filter(q => {
+  const filtered = flatQuestions.value.filter(q => {
     if (!q.skipLogic) return true;
     const sl = q.skipLogic as { hideInModes?: string[] };
     if (!sl.hideInModes || !Array.isArray(sl.hideInModes)) return true;
     return !sl.hideInModes.includes(mode);
   });
+  // Re-index so numbers are 1..N for visible questions only
+  return filtered.map((q, i) => ({ ...q, index: i + 1 }));
 });
 
 const totalQuestions = computed(() => visibleQuestions.value.length);
@@ -63,6 +65,18 @@ const sectionLabels = computed(() => {
     return q.groupLabel;
   });
 });
+
+const currentGroup = computed(() => {
+  const firstUnanswered = visibleQuestions.value.find(q => !isAnswered(q as any));
+  return firstUnanswered?.groupLabel || null;
+});
+
+function groupStatus(g: { label: string; questions: any[] }) {
+  const visibleInGroup = g.questions.filter((q: any) => visibleQuestions.value.some(vq => vq.id === q.id));
+  if (visibleInGroup.length === 0) return { done: false, started: false };
+  const answeredInGroup = visibleInGroup.filter((q: any) => isAnswered({ ...q, groupLabel: g.label, index: 0 } as any));
+  return { done: answeredInGroup.length === visibleInGroup.length, started: answeredInGroup.length > 0 };
+}
 
 onMounted(async () => {
   // Restore diagnosis store from session if navigating directly
@@ -171,8 +185,8 @@ async function handleSubmit() {
       <!-- 左侧 -->
       <div class="flex-1 min-w-0 max-w-[720px] mx-auto md:mx-0 pt-8 pb-24 md:pb-32">
         <router-link to="/" class="text-[#64748B] text-sm hover:text-[#1E3A8A] inline-flex items-center gap-1 mb-4">&larr; 返回首页</router-link>
-        <h1 class="text-2xl md:text-3xl font-bold text-[#0F172A] mb-2">{{ questionnaire.title }}</h1>
-        <p class="text-[#64748B] text-sm mb-4">通过 5 个维度完成企业财税基础筛查</p>
+        <h1 class="text-2xl md:text-3xl font-bold text-[#0F172A] mb-1">{{ isV2Mode ? '补充经营诊断信息' : questionnaire.title }}</h1>
+        <p class="text-[#64748B] text-sm mb-6">{{ isV2Mode ? '请补充资料中无法体现的经营情况，系统将结合资料完整度和问卷答案生成四维经营初诊看板。' : '通过 5 个维度完成企业财税基础筛查' }}</p>
 
         <!-- Questions -->
         <template v-for="(q, qi) in visibleQuestions" :key="q.id">
@@ -238,36 +252,45 @@ async function handleSubmit() {
         </div>
       </div>
 
-      <!-- 右侧 sticky 进度面板 -->
-      <div class="hidden lg:block w-[300px] flex-shrink-0 pt-8">
-        <div class="sticky top-[80px]">
-          <div class="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
-            <div class="bg-[#0F172A] text-white px-5 py-3 text-sm font-semibold">初诊进度</div>
-            <div class="p-5 space-y-4">
-              <div class="flex items-center gap-4">
-                <div class="relative w-16 h-16 flex-shrink-0">
-                  <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                    <circle cx="32" cy="32" r="28" fill="none" stroke="#E2E8F0" stroke-width="5"/>
-                    <circle cx="32" cy="32" r="28" fill="none" stroke="#2563EB" stroke-width="5"
-                      :stroke-dasharray="175.9" :stroke-dashoffset="175.9 - (175.9 * answeredCount / totalQuestions)"
-                      stroke-linecap="round" class="transition-all duration-700"/>
-                  </svg>
-                  <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#0F172A]">{{ answeredCount }}/{{ totalQuestions }}</span>
-                </div>
-                <div><p class="text-xs text-[#94A3B8]">已完成</p><p class="text-sm font-medium text-[#0F172A]">{{ Math.round(answeredCount/totalQuestions*100) }}%</p></div>
-              </div>
-              <div>
-                <p class="text-xs text-[#94A3B8] font-medium mb-2 uppercase tracking-wide">覆盖维度</p>
-                <div class="space-y-1.5">
-                  <div v-for="g in questionnaire.groups" :key="g.label" class="flex items-center gap-2 text-xs">
-                    <div class="w-1.5 h-1.5 rounded-full" :class="g.questions.every(q => isAnswered(q as any)) ? 'bg-[#2563EB]' : 'bg-[#CBD5E1]'"></div>
-                    <span :class="g.questions.every(q => isAnswered(q as any)) ? 'text-[#475569]' : 'text-[#94A3B8]'">{{ g.label }}</span>
-                    <span v-if="g.questions.every(q => isAnswered(q as any))" class="text-green-500 ml-auto">✓</span>
-                  </div>
-                </div>
-              </div>
-              <p class="text-[#94A3B8] text-[11px] leading-relaxed pt-2 border-t border-[#F1F5F9]">完成全部问题后，系统将生成初步筛查结果；涉及高风险内容时，将由君册专业人员复核。</p>
+      <!-- 右侧进度面板 -->
+      <div class="hidden lg:block w-[280px] flex-shrink-0 pt-8">
+        <div class="sticky top-[80px] space-y-4">
+          <!-- Progress card -->
+          <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+            <div class="bg-[#0F172A] text-white px-4 py-2.5 text-[13px] font-semibold">
+              {{ isV2Mode ? '九维诊断进度' : '初诊进度' }}
             </div>
+            <div class="p-4 space-y-3">
+              <div class="flex items-center gap-3">
+                <span class="text-[28px] font-extrabold text-[#0F172A]">{{ answeredCount }}</span>
+                <span class="text-[13px] text-slate-400">/ {{ totalQuestions }} 题已完成</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-[#1E3A8A] rounded-full transition-all duration-500"
+                  :style="{ width: (totalQuestions > 0 ? answeredCount / totalQuestions * 100 : 0) + '%' }"/>
+              </div>
+              <div v-if="currentGroup" class="text-[11px] text-slate-400 mt-1">
+                当前：<span class="font-medium text-slate-600">{{ currentGroup }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- Dimension progress -->
+          <div v-if="isV2Mode" class="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-4">
+            <div class="space-y-1.5">
+              <div v-for="g in questionnaire.groups" :key="g.label" class="flex items-center gap-2 text-[11px]">
+                <div class="w-1.5 h-1.5 rounded-full shrink-0"
+                  :class="groupStatus(g).done ? 'bg-green-500' : groupStatus(g).started ? 'bg-amber-400' : 'bg-[#CBD5E1]'"/>
+                <span class="flex-1 truncate"
+                  :class="groupStatus(g).done ? 'text-slate-700 font-medium' : groupStatus(g).started ? 'text-slate-500' : 'text-slate-400'">
+                  {{ g.label }}
+                </span>
+                <span v-if="groupStatus(g).done" class="text-green-500 text-[10px]">完成</span>
+                <span v-else-if="groupStatus(g).started" class="text-amber-500 text-[10px]">进行中</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-4">
+            <p class="text-[12px] text-slate-500 leading-relaxed">完成全部问题后，系统将生成初步筛查结果；涉及高风险内容时，将由君册专业人员复核。</p>
           </div>
         </div>
       </div>

@@ -12,12 +12,53 @@
     </div>
 
     <!-- PENDING_REVIEW -->
-    <div v-else-if="isPendingReview" class="flex items-center justify-center min-h-screen">
-      <div class="max-w-md mx-4 bg-white rounded-2xl p-8 border border-amber-200 shadow-lg text-center">
-        <div class="text-4xl mb-4">⏳</div>
-        <h2 class="text-xl font-bold text-slate-900 mb-2">报告待复核</h2>
-        <p class="text-slate-600 mb-4">{{ pendingMessage }}</p>
-        <p class="text-xs text-slate-400">如有疑问请联系君册财税顾问</p>
+    <div v-else-if="isPendingReview" class="min-h-screen" style="background: linear-gradient(180deg, #F1F5F9 0%, #F8FAFC 100%);">
+      <div class="max-w-lg mx-auto px-4 py-16 md:py-24">
+        <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+          <!-- Header -->
+          <div class="bg-[#0F172A] text-white px-6 py-5 text-center">
+            <h1 class="text-[20px] font-extrabold tracking-tight">初诊结果已生成</h1>
+            <p class="text-[13px] text-slate-300 mt-1">正在由君册专业人员复核</p>
+          </div>
+          <div class="px-6 py-6 space-y-5">
+            <!-- Explanation -->
+            <p class="text-[13px] text-slate-600 leading-relaxed">
+              为避免资料不完整或高风险事项造成误判，系统已将本次初诊结果提交至君册专业人员复核。复核完成后，您将看到完整的四维经营看板和行动建议。
+            </p>
+
+            <!-- Process flow -->
+            <div class="flex items-center justify-between">
+              <div v-for="(step, i) in reviewSteps" :key="i" class="flex flex-col items-center flex-1">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold"
+                  :class="step.done ? 'bg-green-500 text-white' : step.active ? 'bg-[#1E3A8A] text-white' : 'bg-slate-100 text-slate-400'">
+                  {{ step.done ? '&#10003;' : i + 1 }}
+                </div>
+                <span class="text-[10px] mt-1.5 text-center leading-tight"
+                  :class="step.done ? 'text-green-600 font-medium' : step.active ? 'text-[#0F172A] font-semibold' : 'text-slate-400'">
+                  {{ step.label }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Review scope -->
+            <div class="border-t border-slate-100 pt-4">
+              <p class="text-[11px] font-medium text-slate-500 mb-2 uppercase tracking-wide">复核内容</p>
+              <div class="flex flex-wrap gap-1.5">
+                <span v-for="item in reviewItems" :key="item" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-100">{{ item }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- Footer -->
+          <div class="border-t border-slate-100 px-6 py-4 flex gap-3">
+            <router-link to="/" class="flex-1 text-center py-2.5 rounded-xl border border-slate-300 text-[13px] text-slate-600 hover:bg-slate-50 transition font-medium">
+              返回首页
+            </router-link>
+            <button disabled class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-400 text-[13px] font-medium cursor-not-allowed">
+              联系君册顾问
+            </button>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-400 text-center mt-6">本系统仅作为企业经营与财税风险初步筛查参考</p>
       </div>
     </div>
 
@@ -140,9 +181,14 @@ const isPendingReview = computed(() => {
   return report.value && (report.value as any).status === 'PENDING_REVIEW';
 });
 
-const pendingMessage = computed(() => {
-  return (report.value as any)?.message || '您的初诊结果正在由君册专业人员复核，复核完成后将展示完整报告。';
-});
+const reviewSteps = [
+  { label: '资料提交', done: true, active: false },
+  { label: '系统初筛', done: true, active: false },
+  { label: '专业复核', done: false, active: true },
+  { label: '报告开放', done: false, active: false },
+];
+
+const reviewItems = ['税务申报', '发票与资金流水', '资料完整度', '四维经营看板', '服务建议'];
 
 const reviewLabel = computed(() => {
   const s = report.value?.reviewStatus;
