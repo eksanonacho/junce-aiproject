@@ -15,6 +15,6 @@ import { AuthModule } from '../auth/auth.module';
     ReportAccessTokenService,
     ForbiddenPhraseCheckerService,
   ],
-  exports: [ReportService, ForbiddenPhraseCheckerService],
+  exports: [ReportService, ReportAccessTokenService, ForbiddenPhraseCheckerService],
 })
 export class ReportModule {}

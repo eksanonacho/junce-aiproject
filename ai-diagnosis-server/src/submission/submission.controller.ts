@@ -22,6 +22,12 @@ export class SubmissionController {
     return this.submissionService.startV2Submission(dto.phone, dto.mode);
   }
 
+  // V2: lookup phone number history
+  @Post('lookup')
+  async lookup(@Body() dto: { phone: string }) {
+    return this.submissionService.lookupByPhone(dto.phone);
+  }
+
   // V2: complete questionnaire and trigger diagnosis (requires X-Submission-Token)
   @Post(':publicId/complete')
   async complete(

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { DiagnosisService } from '../diagnosis/diagnosis.service';
 import { ReportService } from '../report/report.service';
 import { DocumentService } from '../document/document.service';
+import { ReportAccessTokenService } from '../report/report-access-token.service';
 import { SubmitQuestionnaireDto, SubmitAnswerDto } from './dto/submit-questionnaire.dto';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
@@ -16,6 +17,7 @@ export class SubmissionService {
     private readonly diagnosisService: DiagnosisService,
     private readonly reportService: ReportService,
     private readonly documentService: DocumentService,
+    private readonly reportAccessTokenService: ReportAccessTokenService,
   ) {}
 
   async submit(dto: SubmitQuestionnaireDto) {
@@ -377,5 +379,92 @@ export class SubmissionService {
         ? '提交成功，报告已生成'
         : '提交成功，报告生成中',
     };
+  }
+
+  async lookupByPhone(phone: string) {
+    if (!phone || phone.length < 11) {
+      throw new BadRequestException('手机号格式不正确');
+    }
+
+    // Find latest V2 submission (mode IS NOT NULL)
+    const latest = await this.prisma.submission.findFirst({
+      where: { phone, mode: { not: null } },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        diagnosisResult: {
+          include: { report: true },
+        },
+      },
+    });
+
+    if (!latest) {
+      return {
+        hasExisting: false,
+        latest: null,
+        actions: { canContinue: false, canViewReport: false, canRestart: true },
+      };
+    }
+
+    const report = latest.diagnosisResult?.report;
+    const isDraft = ['DRAFT', 'DOCUMENT_UPLOADING'].includes(latest.status);
+    const isQuestionnaireCompleted = latest.status === 'QUESTIONNAIRE_COMPLETED';
+    const isInDiagnosis = latest.status === 'DIAGNOSING';
+    const isCompleted = latest.status === 'COMPLETED';
+    const hasReport = !!report;
+
+    const result: any = {
+      hasExisting: true,
+      latest: {
+        submissionPublicId: latest.publicId,
+        status: latest.status,
+        mode: latest.mode,
+        createdAt: latest.createdAt,
+        updatedAt: latest.updatedAt,
+        report: null as any,
+      },
+      actions: {
+        canContinue: isDraft || isQuestionnaireCompleted || isInDiagnosis,
+        canViewReport: isCompleted && hasReport,
+        canRestart: true,
+      },
+    };
+
+    // If DRAFT, generate a new submissionAccessToken for continuation
+    if (isDraft) {
+      const newPlainToken = crypto.randomBytes(32).toString('hex');
+      const newTokenHash = await bcrypt.hash(newPlainToken, 10);
+      await this.prisma.submission.update({
+        where: { id: latest.id },
+        data: { accessTokenHash: newTokenHash, accessTokenCreatedAt: new Date() },
+      });
+      result.latest.submissionAccessToken = newPlainToken;
+    }
+
+    // If has report, generate a fresh reportAccessToken
+    if (hasReport && report) {
+      try {
+        const reportToken = await this.reportAccessTokenService.generateToken(report.id, 7);
+        result.latest.report = {
+          reportPublicId: report.publicId,
+          reportNumber: report.reportNumber,
+          riskLevel: report.riskLevel,
+          reviewStatus: report.reviewStatus,
+          customerVisible: report.customerVisible,
+          reportAccessToken: reportToken,
+        };
+      } catch (err) {
+        this.logger.warn(`Failed to generate report token for lookup: ${(err as Error).message}`);
+        result.latest.report = {
+          reportPublicId: report.publicId,
+          reportNumber: report.reportNumber,
+          riskLevel: report.riskLevel,
+          reviewStatus: report.reviewStatus,
+          customerVisible: report.customerVisible,
+          reportAccessToken: null,
+        };
+      }
+    }
+
+    return result;
   }
 }

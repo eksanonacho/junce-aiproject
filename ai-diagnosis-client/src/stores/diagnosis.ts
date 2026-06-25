@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { startDiagnosis as apiStartDiagnosis, completeDiagnosis as apiCompleteDiagnosis } from '../api/diagnosis';
+import { startDiagnosis as apiStartDiagnosis, completeDiagnosis as apiCompleteDiagnosis, lookupByPhone as apiLookupByPhone, type LookupResponse } from '../api/diagnosis';
 import { fetchDocumentChecklist, uploadDocument, deleteDocument } from '../api/documents';
 import type { DocumentChecklistResponse, UploadedDocumentDto } from '../types/api';
 
@@ -19,6 +19,7 @@ export const useDiagnosisStore = defineStore('diagnosis', () => {
   const diagnosisStatus = ref<string>('');
   const reportStatus = ref<string>('');
   const error = ref<string>('');
+  const lookupResult = ref<LookupResponse | null>(null);
 
   // Getters
   const hasSubmission = computed(() => !!submissionPublicId.value);
@@ -97,6 +98,38 @@ export const useDiagnosisStore = defineStore('diagnosis', () => {
     }
   }
 
+  async function lookup(p: string) {
+    error.value = '';
+    phone.value = p;
+    try {
+      lookupResult.value = await apiLookupByPhone(p);
+      return lookupResult.value;
+    } catch (e: any) {
+      error.value = e.message || '查询失败';
+      throw e;
+    }
+  }
+
+  function continueExisting(sid: string, token: string, m: string) {
+    submissionPublicId.value = sid;
+    submissionAccessToken.value = token;
+    mode.value = m || 'STANDARD';
+    step.value = 'upload';
+    sessionStorage.setItem('v2_submission_token', token);
+    sessionStorage.setItem('v2_submission_id', sid);
+    lookupResult.value = null;
+  }
+
+  function viewExistingReport(rpid: string, reportToken: string) {
+    reportPublicId.value = rpid;
+    reportAccessToken.value = reportToken;
+  }
+
+  function resetLookup() {
+    lookupResult.value = null;
+    error.value = '';
+  }
+
   function restoreFromSession() {
     const token = sessionStorage.getItem('v2_submission_token');
     const sid = sessionStorage.getItem('v2_submission_id');
@@ -109,8 +142,9 @@ export const useDiagnosisStore = defineStore('diagnosis', () => {
   return {
     mode, phone, submissionPublicId, submissionAccessToken, step,
     checklist, documents, completenessScore,
-    reportPublicId, reportAccessToken, diagnosisStatus, reportStatus, error,
+    reportPublicId, reportAccessToken, diagnosisStatus, reportStatus, error, lookupResult,
     hasSubmission, isQuickMode, isStandardMode, missingDocuments,
     startDiagnosis, loadChecklist, uploadDoc, removeDoc, completeDiagnosis, restoreFromSession,
+    lookup, continueExisting, viewExistingReport, resetLookup,
   };
 });
