@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForbiddenPhraseCheckerService } from '../report/forbidden-phrase-checker.service';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly phraseChecker: ForbiddenPhraseCheckerService,
@@ -219,7 +220,7 @@ export class AdminService {
     if (body.htmlContent) {
       const { cleaned, replacements } = await this.phraseChecker.check(body.htmlContent);
       if (replacements > 0) {
-        console.log(`[Admin] ${replacements} forbidden phrases replaced during report update`);
+        this.logger.log(`${replacements} forbidden phrases replaced during report update`);
       }
       body.htmlContent = cleaned;
     }

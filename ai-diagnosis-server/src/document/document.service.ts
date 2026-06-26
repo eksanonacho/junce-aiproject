@@ -40,6 +40,22 @@ export class DocumentService {
     }
   }
 
+  /** Validate file content via magic bytes */
+  private validateMagicBytes(buffer: Buffer, mimeType: string): void {
+    if (buffer.length < 4) throw new BadRequestException('文件内容过短，无法校验');
+    const h = buffer;
+    // PDF: %PDF
+    if (mimeType === 'application/pdf') { if (h[0]!==0x25||h[1]!==0x50||h[2]!==0x44||h[3]!==0x46) throw new BadRequestException('文件内容不是有效的 PDF 格式'); return; }
+    // PNG: 89 50 4E 47
+    if (mimeType === 'image/png') { if (h[0]!==0x89||h[1]!==0x50||h[2]!==0x4E||h[3]!==0x47) throw new BadRequestException('文件内容不是有效的 PNG 格式'); return; }
+    // JPEG: FF D8 FF
+    if (mimeType === 'image/jpeg') { if (h[0]!==0xFF||h[1]!==0xD8||h[2]!==0xFF) throw new BadRequestException('文件内容不是有效的 JPEG 格式'); return; }
+    // Office Open XML (xlsx/docx): PK
+    if (mimeType.startsWith('application/vnd.openxmlformats-officedocument')) { if (h[0]!==0x50||h[1]!==0x4B) throw new BadRequestException('文件内容不是有效的 Office 文档格式'); return; }
+    // Legacy DOC/XLS: D0 CF 11 E0
+    if (mimeType==='application/msword'||mimeType==='application/vnd.ms-excel') { if (h[0]!==0xD0||h[1]!==0xCF||h[2]!==0x11||h[3]!==0xE0) throw new BadRequestException('文件内容不是有效的 MS Office 文档格式'); return; }
+  }
+
   /** Pure template — no submission context, no uploaded status */
   async getRequirementsTemplate(mode: string) {
     const requirements = await this.prisma.documentRequirement.findMany({
@@ -166,6 +182,7 @@ export class DocumentService {
 
     // Validate file
     this.validateFileType(file.mimetype, file.originalname);
+    this.validateMagicBytes(file.buffer, file.mimetype);
 
     // Create submission directory
     const submissionDir = path.resolve('uploads', submissionPublicId);

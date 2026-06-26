@@ -16,12 +16,22 @@ async function main() {
   console.log('🌱 Seeding AI Diagnosis database...');
 
   // --- 1. AdminUser ---
-  const passwordHash = await bcrypt.hash('Admin@123456', 10);
+  const adminUsername = process.env['ADMIN_USERNAME'] || 'admin';
+  const adminPassword = process.env['ADMIN_PASSWORD'] || 'Admin@123456';
+  const isProduction = process.env['NODE_ENV'] === 'production';
+  if (isProduction && !process.env['ADMIN_PASSWORD']) {
+    console.error('ERROR: ADMIN_PASSWORD must be set in production. Refusing to seed.');
+    process.exit(1);
+  }
+  if (!process.env['ADMIN_PASSWORD']) {
+    console.warn('⚠️  ADMIN_PASSWORD not set — using default dev password. NOT safe for production.');
+  }
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
   const admin = await prisma.adminUser.upsert({
-    where: { username: 'admin' },
+    where: { username: adminUsername },
     update: {},
     create: {
-      username: 'admin',
+      username: adminUsername,
       passwordHash,
       realName: '管理员',
       role: 'ADMIN',

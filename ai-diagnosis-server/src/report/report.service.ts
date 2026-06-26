@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReportTemplateService } from './report-template.service';
 import { ReportAccessTokenService } from './report-access-token.service';
@@ -6,6 +6,7 @@ import { ForbiddenPhraseCheckerService } from './forbidden-phrase-checker.servic
 
 @Injectable()
 export class ReportService {
+  private readonly logger = new Logger(ReportService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly template: ReportTemplateService,
@@ -79,7 +80,7 @@ export class ReportService {
     // Forbidden phrase check
     const { cleaned, replacements } = await this.phraseChecker.check(htmlContent);
     if (replacements > 0) {
-      console.log(`[Report] ${replacements} forbidden phrases replaced in report ${reportNumber}`);
+      this.logger.log(`${replacements} forbidden phrases replaced in report ${reportNumber}`);
     }
 
     // Delete old report if exists

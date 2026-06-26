@@ -1,6 +1,7 @@
 import { Body, Controller, Post, Param, Headers } from '@nestjs/common';
 import { SubmissionService } from './submission.service';
 import { SubmitQuestionnaireDto } from './dto/submit-questionnaire.dto';
+import { StartDiagnosisDto, LookupPhoneDto, CompleteDiagnosisDto } from './dto/v2-submission.dto';
 import { DocumentService } from '../document/document.service';
 
 @Controller('api/submissions')
@@ -18,13 +19,13 @@ export class SubmissionController {
 
   // V2: start diagnosis with mode
   @Post('start')
-  async start(@Body() dto: { phone?: string; mode: string }) {
+  async start(@Body() dto: StartDiagnosisDto) {
     return this.submissionService.startV2Submission(dto.phone, dto.mode);
   }
 
   // V2: lookup phone number history
   @Post('lookup')
-  async lookup(@Body() dto: { phone: string }) {
+  async lookup(@Body() dto: LookupPhoneDto) {
     return this.submissionService.lookupByPhone(dto.phone);
   }
 
@@ -32,7 +33,7 @@ export class SubmissionController {
   @Post(':publicId/complete')
   async complete(
     @Param('publicId') publicId: string,
-    @Body() dto: { questionnaireVersion?: string; answers: { questionPublicId: string; value: unknown }[] },
+    @Body() dto: CompleteDiagnosisDto,
     @Headers('x-submission-token') token?: string,
   ) {
     await this.documentService.validateSubmissionToken(publicId, token);

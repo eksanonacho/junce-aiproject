@@ -1,5 +1,6 @@
 # 君册财税 AI 初诊网站 — 独立 docker-compose.yml
 # 不引用、不修改小程序 docker-compose
+# 密钥从 .env 文件读取（详见 .env.example）
 
 version: "3.8"
 
@@ -8,18 +9,20 @@ services:
     image: postgres:16-alpine
     container_name: ai-diagnosis-postgres
     environment:
-      POSTGRES_USER: a1234
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: junce_ai_diagnosis
+      POSTGRES_USER: ${POSTGRES_USER:-a1234}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-junce_ai_diagnosis}
     ports:
       - "5433:5432"
     volumes:
       - ai_diagnosis_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U a1234 -d junce_ai_diagnosis" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-a1234} -d ${POSTGRES_DB:-junce_ai_diagnosis}" ]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - internal
 
   server:
     build:
@@ -29,14 +32,23 @@ services:
     ports:
       - "3001:3001"
     environment:
-      DATABASE_URL: "postgresql://a1234:postgres@postgres:5432/junce_ai_diagnosis?schema=public"
-      JWT_SECRET: "change-this-in-production"
-      JWT_EXPIRES_IN: "7d"
-      PORT: "3001"
-      AI_POLISH_ENABLED: "false"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-a1234}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-junce_ai_diagnosis}?schema=public"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      PORT: ${PORT:-3001}
+      AI_POLISH_ENABLED: ${AI_POLISH_ENABLED:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      NODE_ENV: ${NODE_ENV:-production}
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - internal
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   client:
     build:
@@ -46,7 +58,14 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - server
+      server:
+        condition: service_healthy
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
 
 volumes:
   ai_diagnosis_pgdata:
