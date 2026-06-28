@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import JcBrand from '../components/common/JcBrand.vue';
 import JcIcon from '../components/ui/JcIcon.vue';
-function scrollTo(id: string) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); }
+
+function scrollTo(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+}
 
 const phone = ref('');
 const code = ref('');
@@ -18,348 +22,371 @@ function handleSendCode() {
 }
 
 const riskScenes = [
-  { icon: 'tax', title: '税务申报异常', concern: '是否存在逾期申报、申报数据异常、历史处罚或税务状态异常。', signals: '多期未申报 · 申报数据波动异常 · 存在税务处罚记录', advice: '建议结合历史申报表、税务状态和账务资料进一步核查。' },
-  { icon: 'history', title: '长期零申报', concern: '企业是否存在持续经营迹象，但长期进行零申报。', signals: '仍有经营流水 · 仍在开票或收款 · 员工或办公成本持续存在', advice: '建议核对实际经营、银行流水和申报口径是否一致。' },
-  { icon: 'invoice', title: '发票与流水风险', concern: '发票开具、银行流水和实际业务之间是否需要进一步核查。', signals: '发票金额与流水不匹配 · 大额往来缺少业务说明 · 进销项结构异常', advice: '建议结合合同、发票、流水和账务凭证进行复核。' },
-  { icon: 'socialSecurity', title: '社保用工问题', concern: '员工社保、劳务用工和人员结构是否存在潜在隐患。', signals: '有员工但未缴社保 · 劳务人员比例较高 · 工资与个税、社保数据不一致', advice: '建议结合员工花名册、工资表、社保记录和个税申报进一步确认。' },
-  { icon: 'company', title: '工商变更 / 异常', concern: '法人、股东、地址变更及工商异常状态是否影响后续经营。', signals: '频繁变更法人或股东 · 注册地址异常 · 工商年报异常', advice: '建议结合工商档案、年报记录和当前经营情况进一步核查。' },
-  { icon: 'warning', title: '注销前风险', concern: '企业注销前账务、税务、发票和工商资料是否完整。', signals: '账务资料不完整 · 仍有未处理发票 · 税务状态未清理', advice: '建议在注销前完成税务、账务、工商和发票资料的系统核查。' },
+  {
+    icon: 'tax',
+    title: '税务风险识别',
+    tag: '税务申报异常',
+    tone: 'red',
+    points: ['核心：税负异常监控', '信号：长期零申报或申报数据异常', '建议：行业对标优化及合规申报'],
+  },
+  {
+    icon: 'invoice',
+    title: '票据合规穿透',
+    tag: '发票与流水',
+    tone: 'gold',
+    points: ['核心：票据与资金流水交叉核验', '信号：上下游关系及异常往来资金', '建议：规范入账与资金管理流程'],
+  },
+  {
+    icon: 'socialSecurity',
+    title: '用工与社保风控',
+    tag: '社保用工',
+    tone: 'ink',
+    points: ['核心：劳务派遣与社保合规分析', '信号：个税与社保基数不一致监测', '建议：多元化用工成本优化方案'],
+  },
 ];
 
 const flows = [
-  { num: '01', icon: 'company', title: '填写企业信息', input: '企业基础信息、经营情况、财税状态、当前诉求', process: '客户通过结构化问卷提交企业当前情况，减少后续反复沟通。', output: '形成客户初诊档案' },
-  { num: '02', icon: 'analysis', title: '系统规则筛查', input: '客户提交的问卷答案', process: '系统根据预设规则识别常见风险场景，并进行初步风险分层。', output: '生成 LOW / MEDIUM / HIGH 初步等级' },
-  { num: '03', icon: 'report', title: '生成初诊报告', input: '风险分层、命中场景、服务建议', process: '低风险客户可查看初诊报告；中高风险客户进入待复核状态。', output: '生成客户侧初诊报告' },
-  { num: '04', icon: 'review', title: '人工复核确认', input: '中高风险报告、客户提交信息、命中风险点', process: '君册人员在后台查看报告内容，决定通过、驳回或修改报告。', output: '形成复核记录和客户可见状态' },
-  { num: '05', icon: 'service', title: '服务跟进转化', input: '客户初诊结果和复核意见', process: '根据客户风险类型和当前诉求，衔接代理记账、税务合规、注销清算、工商变更等服务。', output: '进入后续沟通和服务跟进' },
-];
-
-const mockLeads = [
-  { phone: '138****8000', risk: 'HIGH', status: '待复核' },
-  { phone: '186****1122', risk: 'LOW', status: '已生成' },
-  { phone: '159****8899', risk: 'MEDIUM', status: '待复核' },
-  { phone: '177****6655', risk: 'LOW', status: '已复核' },
+  { num: '01', icon: 'company', title: '信息收集', desc: '录入企业核心经营数据与资料' },
+  { num: '02', icon: 'analysis', title: '规则匹配', desc: '系统匹配财税风险筛查规则' },
+  { num: '03', icon: 'report', title: '生成报告', desc: '多维度评估生成可视化看板报告' },
+  { num: '04', icon: 'review', title: '专家复核', desc: '高风险事项进入人工复核' },
+  { num: '05', icon: 'service', title: '服务落地', desc: '衔接后续沟通与服务方案' },
 ];
 
 const services = [
-  { icon: 'report', label: '代理记账' },
-  { icon: 'tax', label: '税务合规' },
-  { icon: 'company', label: '工商变更' },
-  { icon: 'warning', label: '注销清算' },
-  { icon: 'socialSecurity', label: '社保用工' },
-  { icon: 'risk', label: '异常处理' },
+  { icon: 'report', label: '代理记账', desc: '精准录入、实时预警，让账目成为企业经营的指南针。' },
+  { icon: 'warning', label: '合规整改', desc: '梳理历史遗留问题，建立长效的财税合规管理体系。' },
+  { icon: 'tax', label: '税务筹划', desc: '在合规前提下优化税务结构，提升企业现金流综合效益。' },
+  { icon: 'company', label: '工商变更', desc: '高效办理各类工商变更、资质办理及异常名录处理。' },
+  { icon: 'secure', label: '注销清算', desc: '专业清理税务历史问题，安全高效办理企业退出流程。' },
+  { icon: 'analysis', label: '财务外包', desc: '由专业财务团队参与并优化企业日常财务管理。' },
 ];
 </script>
 
 <template>
-<div class="min-h-screen bg-[#F2F5FC] text-[#1E293B] font-sans overflow-x-hidden">
-
-  <!-- ===== 1. 导航栏 ===== -->
-  <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-[#E2E8F0]/60" style="height:64px">
-    <div class="max-w-[1200px] mx-auto px-6 h-full flex items-center justify-between">
-      <router-link to="/" class="flex items-center gap-3 no-underline">
-        <img src="/logo.png" alt="君册财税" class="h-9 w-auto" />
-        <span class="text-[#475569] font-normal text-sm hidden sm:inline">企业财税 AI 初诊</span>
-      </router-link>
-      <div class="flex items-center gap-6 text-sm">
-        <a @click="scrollTo('scenes')" class="text-[#475569] hover:text-[#1E3A8A] cursor-pointer hidden md:block">覆盖场景</a>
-        <a @click="scrollTo('flow')" class="text-[#475569] hover:text-[#1E3A8A] cursor-pointer hidden md:block">初诊流程</a>
-        <a @click="scrollTo('services')" class="text-[#475569] hover:text-[#1E3A8A] cursor-pointer hidden md:block">衔接服务</a>
-        <router-link to="/diagnosis/start" class="bg-[#1E3A8A] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#1E40AF] transition inline-flex items-center gap-1.5 shadow-sm">
-          开始初诊 <JcIcon name="arrowRight" :size="14" color="#fff" />
+  <div class="home-shell min-h-screen text-[#1A1A1A] font-sans overflow-x-hidden">
+    <nav class="fixed top-0 left-0 w-full z-50 h-20 bg-[#FFF8F3]/86 backdrop-blur-xl border-b border-[#D8C5A8]/35 shadow-[0_8px_28px_rgba(53,48,39,0.05)]">
+      <div class="max-w-[1280px] mx-auto px-5 md:px-10 h-full flex items-center justify-between">
+        <JcBrand />
+        <div class="hidden md:flex items-center gap-10 text-[13px] font-semibold">
+          <button @click="scrollTo('scenes')" class="text-[#785600] border-b-2 border-[#785600] pb-1">覆盖场景</button>
+          <button @click="scrollTo('flow')" class="text-[#5E5548] hover:text-[#785600] transition">初诊流程</button>
+          <button @click="scrollTo('services')" class="text-[#5E5548] hover:text-[#785600] transition">衔接服务</button>
+        </div>
+        <router-link to="/diagnosis/start" class="bg-[#785600] text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-[#5D4200] transition shadow-[0_12px_26px_rgba(120,86,0,0.18)]">
+          开始初诊
         </router-link>
       </div>
-    </div>
-  </nav>
+    </nav>
 
-  <!-- ===== 2. Hero 首屏 ===== -->
-  <section class="relative overflow-hidden bg-cover bg-center" style="min-height:620px;background-image:url('/hero-bg.png')">
-    <div class="relative max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row items-center gap-10 md:gap-6" style="padding-top:88px;padding-bottom:88px">
-      <!-- 左侧 -->
-      <div class="flex-1 text-center md:text-left max-w-[580px]">
-        <div class="inline-flex items-center gap-1.5 bg-[#FEF3C7] text-[#92400E] text-xs font-medium px-3 py-1 rounded-full mb-5">
-          <JcIcon name="risk" :size="13" color="#92400E" /> 企业财税风险初筛 · AI 辅助
-        </div>
-        <h1 class="text-[38px] md:text-[48px] lg:text-[56px] font-extrabold text-[#0F172A] leading-[1.08] tracking-tight mb-5">
-          君册财税<br/><span class="text-[#1E3A8A]">AI 企业初诊</span>
-        </h1>
-        <p class="text-[#475569] text-base md:text-lg max-w-[520px] mb-4 leading-relaxed">
-          通过结构化问卷，快速识别企业在税务申报、发票流水、工商状态、社保用工与注销前准备中的常见风险，为后续人工复核和服务跟进提供参考。
-        </p>
-        <div class="flex flex-wrap items-center gap-3 text-sm text-[#64748B] mb-8">
-          <span class="inline-flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-full px-3 py-1"><JcIcon name="process" :size="14" color="#64748B"/> 3 分钟填写</span>
-          <span class="inline-flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-full px-3 py-1"><JcIcon name="analysis" :size="14" color="#64748B"/> 自动生成初诊结果</span>
-          <span class="inline-flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-full px-3 py-1"><JcIcon name="review" :size="14" color="#64748B"/> 高风险人工复核</span>
-          <span class="inline-flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-full px-3 py-1"><JcIcon name="report" :size="14" color="#64748B"/> 报告可打印留存</span>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-          <router-link to="/diagnosis/start" class="inline-flex items-center gap-2 bg-[#1E3A8A] text-white px-7 py-3.5 rounded-xl font-semibold text-base hover:bg-[#1E40AF] transition shadow-lg shadow-blue-500/20">
-            开始免费初诊 <JcIcon name="arrowRight" :size="18" color="#fff" />
-          </router-link>
-          <button @click="scrollTo('flow')" class="inline-flex items-center gap-2 border border-[#CBD5E1] text-[#475569] px-7 py-3.5 rounded-xl font-medium text-base hover:border-[#94A3B8] hover:bg-white transition">
-            查看初诊流程
-          </button>
-        </div>
-      </div>
-      <!-- 右侧：手机号验证码初诊入口卡 -->
-      <div class="flex-shrink-0 w-full max-w-[440px]">
-        <div class="bg-white rounded-3xl shadow-2xl shadow-slate-200/60 border border-[#E2E8F0]/50 overflow-hidden">
-          <!-- 顶部安全标签栏 -->
-          <div class="bg-[#0F172A] text-white px-6 py-3.5 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <JcIcon name="secure" :size="16" color="#FBBF24" />
-              <span class="font-semibold text-sm">开始企业财税初诊</span>
+    <main class="pt-20">
+      <section class="home-hero relative min-h-[790px] flex items-center overflow-hidden">
+        <div class="absolute inset-0 bg-[rgba(255,248,243,0.82)]"></div>
+        <div class="absolute inset-0 hero-grid pointer-events-none"></div>
+        <div class="relative z-[1] max-w-[1280px] mx-auto px-5 md:px-10 py-20 md:py-28 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div class="lg:col-span-7 max-w-2xl">
+            <div class="inline-flex items-center gap-2 rounded-full bg-[#F3E6C8] text-[#785600] border border-[#B8860B]/20 px-4 py-1.5 text-[12px] font-semibold mb-8 shadow-sm">
+              <JcIcon name="secure" :size="15" color="#785600" />
+              君册财税 · 企业财税风险初筛
             </div>
-            <span class="bg-white/10 text-white/80 text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1"><JcIcon name="secure" :size="10" color="#FBBF24" /> 安全验证</span>
+            <h1 class="text-[48px] md:text-[72px] lg:text-[82px] leading-[0.98] font-extrabold tracking-tight mb-7">
+              AI <span class="text-bronze">企业经营初诊系统</span>
+            </h1>
+            <p class="text-[15px] md:text-[17px] leading-8 text-[#4F4535] max-w-xl mb-8">
+              通过结构化问卷与资料上传，快速识别企业在税务申报、发票流水、用工合规及经营状态中的潜在风险，为后续人工复核和服务跟进提供参考。
+            </p>
+            <div class="flex flex-wrap gap-3 mb-8">
+              <span class="home-pill"><JcIcon name="process" :size="14" color="#785600" />3分钟填写</span>
+              <span class="home-pill"><JcIcon name="analysis" :size="14" color="#785600" />自动生成初诊结果</span>
+              <span class="home-pill"><JcIcon name="review" :size="14" color="#785600" />高风险人工复核</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="flex -space-x-3">
+                <span class="home-avatar bg-[#0F2F32]"></span>
+                <span class="home-avatar bg-[#173B3A]"></span>
+                <span class="home-avatar bg-[#D8C5A8]"></span>
+              </div>
+              <span class="text-[13px] text-[#5E5548] font-medium">已为 5,000+ 企业提供风险预警</span>
+            </div>
           </div>
-          <!-- 表单主体 -->
-          <div class="p-6 space-y-4">
-            <p class="text-[#64748B] text-sm leading-relaxed">手机号验证后进入问卷，初诊结果将用于后续报告查看和人工复核联系。</p>
-            <!-- 手机号 -->
-            <div>
-              <label class="block text-sm font-medium text-[#0F172A] mb-1.5">手机号</label>
-              <input
-                v-model="phone"
-                type="tel"
-                maxlength="11"
-                placeholder="请输入用于接收初诊结果的手机号"
-                class="w-full h-[46px] px-4 border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 outline-none transition text-sm"
-              />
-            </div>
-            <!-- 验证码 -->
-            <div>
-              <label class="block text-sm font-medium text-[#0F172A] mb-1.5">验证码</label>
-              <div class="flex gap-2">
-                <input
-                  v-model="code"
-                  type="text"
-                  maxlength="6"
-                  placeholder="请输入验证码"
-                  class="flex-1 h-[46px] px-4 border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 outline-none transition text-sm"
-                />
-                <button
-                  @click="handleSendCode"
-                  :disabled="codeSending"
-                  class="flex-shrink-0 h-[46px] px-4 rounded-xl border border-[#CBD5E1] text-[#475569] text-sm font-medium hover:border-[#2563EB] hover:text-[#2563EB] disabled:opacity-50 transition whitespace-nowrap"
-                >{{ codeSending ? '已发送' : '获取验证码' }}</button>
+
+          <div class="lg:col-span-5">
+            <div class="glass-card rounded-[24px] p-7 md:p-8 shadow-[0_30px_80px_rgba(53,48,39,0.14)]">
+              <h2 class="text-[22px] font-bold text-[#1A1A1A] mb-4">开始企业经营初诊</h2>
+              <p class="text-[13px] leading-6 text-[#5E5548] mb-6">
+                上传经营资料并补充关键信息，系统将生成利润、风险、现金流、效率四维经营看板。
+              </p>
+              <div class="space-y-4">
+                <label class="block">
+                  <span class="block text-[12px] font-semibold text-[#5E5548] mb-2">手机号码</span>
+                  <input v-model="phone" maxlength="11" type="tel" placeholder="请输入您的联系方式" class="home-input" />
+                </label>
+                <label class="block">
+                  <span class="block text-[12px] font-semibold text-[#5E5548] mb-2">验证码</span>
+                  <div class="flex gap-2">
+                    <input v-model="code" maxlength="6" type="text" placeholder="6位数字" class="home-input flex-1" />
+                    <button @click="handleSendCode" :disabled="codeSending" class="px-4 rounded-xl border border-[#785600] text-[#785600] text-[12px] font-semibold hover:bg-[#F3E6C8] disabled:opacity-50 transition">
+                      {{ codeSending ? '已发送' : '获取验证码' }}
+                    </button>
+                  </div>
+                </label>
+                <router-link to="/diagnosis/start" class="flex h-14 items-center justify-center rounded-xl bg-[#785600] text-white font-bold text-[16px] shadow-[0_18px_34px_rgba(120,86,0,0.22)] hover:bg-[#5D4200] transition">
+                  开始免费初诊
+                </router-link>
+                <p class="text-center text-[11px] text-[#817563]">信息仅用于初诊与复核联系</p>
               </div>
             </div>
-            <!-- TODO: 接入真实短信验证码接口后，在这里调用 sendSmsCode() -->
-            <!-- TODO: 验证通过后再进入问卷 -->
-            <!-- 主按钮 -->
-            <router-link to="/diagnosis/start" class="block w-full h-[48px] bg-[#1E3A8A] text-white rounded-xl font-semibold text-base hover:bg-[#1E40AF] transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
-              开始免费初诊 <JcIcon name="arrowRight" :size="18" color="#fff" />
+          </div>
+        </div>
+      </section>
+
+      <section id="scenes" class="bg-[#FFF8F3]/90 px-5 md:px-10 py-20 md:py-24">
+        <div class="max-w-[1280px] mx-auto">
+          <div class="flex flex-col md:flex-row justify-between md:items-end gap-5 mb-14">
+            <div>
+              <h2 class="text-[34px] md:text-[46px] font-extrabold tracking-tight mb-4">全维度风险穿透</h2>
+              <p class="text-[14px] md:text-[16px] text-[#5E5548] max-w-2xl leading-7">针对核心经营环节，提供多层次的数据扫描与预警分析，涵盖税务、票据及用工等核心场景。</p>
+            </div>
+            <button @click="scrollTo('services')" class="hidden md:inline-flex items-center gap-2 text-[#785600] text-[13px] font-bold hover:gap-3 transition-all">
+              查看所有覆盖场景 <JcIcon name="arrowRight" :size="14" color="#785600" />
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-7">
+            <article v-for="scene in riskScenes" :key="scene.title" class="risk-card group" :class="`tone-${scene.tone}`">
+              <div class="flex justify-between items-start mb-7">
+                <span class="risk-icon"><JcIcon :name="scene.icon" :size="22" color="currentColor" /></span>
+                <span class="risk-tag">{{ scene.tag }}</span>
+              </div>
+              <h3 class="text-[20px] font-bold mb-5">{{ scene.title }}</h3>
+              <ul class="space-y-3 text-[13px] text-[#4F4535] leading-6">
+                <li v-for="(point, i) in scene.points" :key="point" class="flex gap-2">
+                  <span class="mt-2 h-1.5 w-1.5 rounded-full flex-none" :class="i === 0 ? 'bg-current' : i === 1 ? 'bg-[#B8860B]' : 'bg-[#2F6B48]'"></span>
+                  <span>{{ point }}</span>
+                </li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="flow" class="bg-[#F9F7F2] px-5 md:px-10 py-20 md:py-24">
+        <div class="max-w-[1280px] mx-auto">
+          <div class="text-center mb-16">
+            <h2 class="text-[34px] md:text-[44px] font-extrabold tracking-tight mb-4">诊断标准化流程</h2>
+            <p class="text-[#5E5548] text-[14px] md:text-[16px]">科学、严谨、高效的五步走诊断法，助力企业稳健经营</p>
+          </div>
+          <div class="relative grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div class="hidden md:block absolute top-[34px] left-[8%] right-[8%] h-px bg-[#D8C5A8]"></div>
+            <article v-for="step in flows" :key="step.num" class="relative z-[1] flex flex-col items-center text-center">
+              <div class="w-16 h-16 rounded-full bg-[#EFE6D8] border-4 border-[#F9F7F2] flex items-center justify-center text-[#785600] mb-4 shadow-sm">
+                <JcIcon :name="step.icon" :size="20" color="#785600" />
+              </div>
+              <div class="w-full rounded-xl bg-[#FFF8F3] border border-[#D8C5A8]/55 px-4 py-4 shadow-[0_10px_28px_rgba(53,48,39,0.04)]">
+                <h3 class="text-[16px] font-bold mb-1">{{ step.num }} {{ step.title }}</h3>
+                <p class="text-[12px] text-[#5E5548] leading-5">{{ step.desc }}</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="services" class="bg-[#FFF8F3] px-5 md:px-10 py-20 md:py-24 relative overflow-hidden">
+        <div class="absolute right-[-120px] top-[140px] w-[420px] h-[420px] rounded-full bg-[#B8860B]/8 blur-3xl"></div>
+        <div class="max-w-[1280px] mx-auto relative z-[1]">
+          <div class="text-center mb-14">
+            <h2 class="text-[34px] md:text-[44px] font-extrabold tracking-tight mb-4">后续深度服务</h2>
+            <p class="text-[#5E5548] text-[14px] md:text-[16px]">针对初诊结果，提供端到端的专业财税解决方案。</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <article v-for="svc in services" :key="svc.label" class="service-card">
+              <div class="flex items-center gap-2 mb-3">
+                <JcIcon :name="svc.icon" :size="18" color="#785600" />
+                <h3 class="text-[18px] font-bold">{{ svc.label }}</h3>
+              </div>
+              <p class="text-[13px] leading-6 text-[#5E5548]">{{ svc.desc }}</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="px-5 md:px-10 py-16 md:py-20 bg-[#F3EDE3]">
+        <div class="max-w-[1280px] mx-auto rounded-[32px] bg-[#121212] text-white px-6 md:px-20 py-16 md:py-20 text-center shadow-[0_28px_80px_rgba(18,18,18,0.18)]">
+          <h2 class="text-[32px] md:text-[46px] font-extrabold tracking-tight mb-5">准备好进行企业“经营体检”了吗？</h2>
+          <p class="text-[#C8C6C5] text-[14px] md:text-[16px] leading-7 max-w-2xl mx-auto mb-10">每一个经营风险都值得被提前看见。现在开始，为您的企业建立更清晰的经营判断基础。</p>
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <router-link to="/diagnosis/start" class="px-9 py-4 rounded-xl bg-[#785600] text-white font-bold hover:bg-[#946D11] transition shadow-[0_16px_34px_rgba(120,86,0,0.28)]">
+              即刻开始初诊
             </router-link>
-            <!-- 合规提示 -->
-            <p class="text-[#94A3B8] text-xs leading-relaxed text-center">本系统仅用于企业财税初步筛查，涉及高风险内容时将由君册专业人员复核。</p>
+            <button @click="scrollTo('flow')" class="px-9 py-4 rounded-xl border border-white/35 text-white font-bold hover:bg-white/10 transition">
+              查看初诊流程
+            </button>
           </div>
         </div>
-        <!-- 底部信任标签 -->
-        <div class="flex flex-wrap justify-center gap-2 mt-4">
-          <span class="bg-white/80 border border-[#E2E8F0] rounded-full px-3 py-1 text-[11px] text-[#64748B] flex items-center gap-1"><JcIcon name="secure" :size="11" color="#64748B"/> 信息仅用于初诊</span>
-          <span class="bg-white/80 border border-[#E2E8F0] rounded-full px-3 py-1 text-[11px] text-[#64748B] flex items-center gap-1"><JcIcon name="review" :size="11" color="#64748B"/> 高风险人工复核</span>
-          <span class="bg-white/80 border border-[#E2E8F0] rounded-full px-3 py-1 text-[11px] text-[#64748B] flex items-center gap-1"><JcIcon name="report" :size="11" color="#64748B"/> 报告可留存查看</span>
-        </div>
-      </div>
-    </div>
-  </section>
+      </section>
+    </main>
 
-  <!-- ===== 3. 信任/能力标签条 ===== -->
-  <section class="bg-white border-y border-[#E2E8F0]/60 -mt-1 relative z-10">
-    <div class="max-w-[1200px] mx-auto px-6 py-5 flex flex-wrap items-center justify-center gap-6 md:gap-10 text-sm text-[#64748B] font-medium">
-      <div class="flex items-center gap-2"><JcIcon name="process" :size="16" color="#64748B"/> 结构化问卷</div>
-      <div class="hidden sm:block text-[#CBD5E1]">|</div>
-      <div class="flex items-center gap-2"><JcIcon name="analysis" :size="16" color="#64748B"/> 规则初筛</div>
-      <div class="hidden sm:block text-[#CBD5E1]">|</div>
-      <div class="flex items-center gap-2"><JcIcon name="review" :size="16" color="#64748B"/> 人工复核</div>
-      <div class="hidden sm:block text-[#CBD5E1]">|</div>
-      <div class="flex items-center gap-2"><JcIcon name="report" :size="16" color="#64748B"/> 报告留存</div>
-      <div class="hidden sm:block text-[#CBD5E1]">|</div>
-      <div class="flex items-center gap-2"><JcIcon name="service" :size="16" color="#64748B"/> 服务跟进</div>
-    </div>
-  </section>
-
-  <!-- ===== 4. 为什么选择 AI 初诊 ===== -->
-  <section class="why-bg border-y border-[#E2E8F0]/30">
-    <div class="max-w-[1200px] mx-auto px-6 py-20">
-      <div class="text-center mb-12">
-        <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Why AI Diagnosis</p>
-        <h2 class="text-3xl font-bold text-[#0F172A] mb-3">为什么需要 AI 初诊</h2>
-        <p class="text-[#64748B] max-w-xl mx-auto">不是替代专业判断，而是把客户咨询前的信息收集、风险初筛和服务分层先标准化。</p>
-      </div>
-      <!-- 对比区 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-        <div class="bg-white rounded-2xl p-6 border border-[#E2E8F0]/60" style="box-shadow:0 12px 30px rgba(15,23,42,0.03)">
-          <h3 class="font-bold text-[#0F172A] mb-4 flex items-center gap-2"><JcIcon name="warning" :size="18" color="#94A3B8" /> 传统咨询常见问题</h3>
-          <div class="space-y-3 text-sm text-[#64748B]">
-            <div class="flex items-start gap-2"><span class="text-[#CBD5E1] mt-0.5">—</span>客户情况靠微信零散沟通，信息不完整</div>
-            <div class="flex items-start gap-2"><span class="text-[#CBD5E1] mt-0.5">—</span>员工反复询问企业基础信息，效率低</div>
-            <div class="flex items-start gap-2"><span class="text-[#CBD5E1] mt-0.5">—</span>客户风险轻重难以快速判断，跟进优先级不清晰</div>
-            <div class="flex items-start gap-2"><span class="text-[#CBD5E1] mt-0.5">—</span>敏感问题容易直接沟通，缺少统一话术和复核边界</div>
-          </div>
+    <footer class="bg-[#FFF8F3] border-t border-[#D8C5A8]/35 px-5 md:px-10 py-10">
+      <div class="max-w-[1280px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div>
+          <JcBrand compact />
+          <p class="text-[12px] text-[#817563] mt-3">© 2024 君册财税 AI. 保留所有权利。初诊报告仅供参考。</p>
         </div>
-        <div class="rounded-2xl p-6 border border-[#DBEAFE]" style="background:linear-gradient(180deg,#EFF6FF 0%,#F8FAFC 100%);box-shadow:0 12px 30px rgba(37,99,235,0.06)">
-          <h3 class="font-bold text-[#0F172A] mb-4 flex items-center gap-2"><JcIcon name="success" :size="18" color="#2563EB" /> AI 初诊带来的改进</h3>
-          <div class="space-y-3 text-sm text-[#1E3A8A]">
-            <div class="flex items-start gap-2"><JcIcon name="success" :size="14" color="#2563EB" class="mt-0.5 flex-shrink-0" />通过结构化问卷一次性收集关键资料</div>
-            <div class="flex items-start gap-2"><JcIcon name="success" :size="14" color="#2563EB" class="mt-0.5 flex-shrink-0" />系统按规则完成初步风险分层</div>
-            <div class="flex items-start gap-2"><JcIcon name="success" :size="14" color="#2563EB" class="mt-0.5 flex-shrink-0" />低风险自动生成初诊结果，高风险进入人工复核</div>
-            <div class="flex items-start gap-2"><JcIcon name="success" :size="14" color="#2563EB" class="mt-0.5 flex-shrink-0" />后台沉淀客户线索、风险等级和复核记录</div>
-          </div>
+        <div class="flex gap-8 text-[12px] font-semibold text-[#5E5548]">
+          <span>隐私政策</span>
+          <span>服务条款</span>
+          <span>数据安全</span>
         </div>
       </div>
-      <!-- 3 张核心能力卡片 -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="group rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1 bg-white" style="border:1px solid rgba(148,163,184,0.20);box-shadow:0 18px 45px rgba(15,23,42,0.05)">
-          <div class="w-12 h-12 rounded-2xl bg-[#EFF6FF] border border-[#DBEAFE] flex items-center justify-center mb-5 group-hover:scale-105 transition"><JcIcon name="company" :size="24" /></div>
-          <div class="text-xs text-[#1E3A8A] font-semibold mb-2 tracking-wide uppercase">Capability 1</div>
-          <h3 class="font-bold text-[#0F172A] text-lg mb-2">信息结构化</h3>
-          <p class="text-[#64748B] text-sm leading-relaxed mb-3">围绕企业基础信息、经营状态、申报情况、发票流水、社保用工和当前诉求设计问题，减少人工反复沟通。</p>
-          <div class="flex flex-wrap gap-1.5"><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">企业画像</span><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">财税状态</span><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">当前诉求</span></div>
-        </div>
-        <div class="group rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1 bg-white" style="border:1px solid rgba(148,163,184,0.20);box-shadow:0 18px 45px rgba(15,23,42,0.05)">
-          <div class="w-12 h-12 rounded-2xl bg-[#EFF6FF] border border-[#DBEAFE] flex items-center justify-center mb-5 group-hover:scale-105 transition"><JcIcon name="risk" :size="24" /></div>
-          <div class="text-xs text-[#1E3A8A] font-semibold mb-2 tracking-wide uppercase">Capability 2</div>
-          <h3 class="font-bold text-[#0F172A] text-lg mb-2">风险初步分层</h3>
-          <p class="text-[#64748B] text-sm leading-relaxed mb-3">根据客户填写内容，系统对常见财税、工商、社保和注销场景进行规则筛查，形成低、中、高风险初步分层。</p>
-          <div class="flex flex-wrap gap-1.5"><span class="bg-green-50 text-green-700 text-[11px] px-2 py-0.5 rounded-full">LOW</span><span class="bg-yellow-50 text-yellow-700 text-[11px] px-2 py-0.5 rounded-full">MEDIUM</span><span class="bg-red-50 text-red-700 text-[11px] px-2 py-0.5 rounded-full">HIGH</span></div>
-        </div>
-        <div class="group rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1 bg-white" style="border:1px solid rgba(148,163,184,0.20);box-shadow:0 18px 45px rgba(15,23,42,0.05)">
-          <div class="w-12 h-12 rounded-2xl bg-[#FEF3C7] border border-[#FDE68A] flex items-center justify-center mb-5 group-hover:scale-105 transition"><JcIcon name="review" :size="24" color="#D97706" /></div>
-          <div class="text-xs text-[#92400E] font-semibold mb-2 tracking-wide uppercase">Capability 3</div>
-          <h3 class="font-bold text-[#0F172A] text-lg mb-2">人工复核兜底</h3>
-          <p class="text-[#64748B] text-sm leading-relaxed mb-3">涉及敏感或高风险内容时，报告不会直接展示给客户，而是进入君册内部复核流程，保障合规底线。</p>
-          <div class="flex flex-wrap gap-1.5"><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">待复核</span><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">已通过</span><span class="bg-[#F1F5F9] text-[#64748B] text-[11px] px-2 py-0.5 rounded-full">已驳回</span></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== 5. 财税风险场景矩阵 ===== -->
-  <section id="scenes" class="risk-bg border-y border-[#E2E8F0]/60">
-    <div class="max-w-[1200px] mx-auto px-6 py-20">
-      <div class="text-center mb-12">
-        <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Risk Coverage</p>
-        <h2 class="text-3xl font-bold text-[#0F172A] mb-3">覆盖企业常见财税风险场景</h2>
-        <p class="text-[#64748B] max-w-xl mx-auto">系统仅作初步筛查，具体判断需要结合账务、申报、发票、流水、工商和社保资料进一步确认。</p>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-        <div v-for="s in riskScenes" :key="s.title" class="group rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 cursor-default bg-white" style="border:1px solid rgba(148,163,184,0.18);box-shadow:0 12px 30px rgba(15,23,42,0.04);min-height:220px">
-          <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 rounded-xl bg-[#EFF6FF] border border-[#DBEAFE] flex items-center justify-center group-hover:bg-[#DBEAFE] transition flex-shrink-0"><JcIcon :name="s.icon" :size="20" /></div>
-            <h4 class="font-semibold text-[#0F172A] text-base">{{ s.title }}</h4>
-          </div>
-          <div class="space-y-2.5 text-sm">
-            <div><span class="text-[#94A3B8] text-xs font-medium uppercase tracking-wide">关注问题</span><p class="text-[#475569] mt-0.5 leading-relaxed">{{ s.concern }}</p></div>
-            <div><span class="text-[#94A3B8] text-xs font-medium uppercase tracking-wide">常见信号</span><p class="text-[#64748B] mt-0.5 leading-relaxed text-[13px]">{{ s.signals }}</p></div>
-            <div><span class="text-[#1E3A8A] text-xs font-medium uppercase tracking-wide">建议方向</span><p class="text-[#475569] mt-0.5 leading-relaxed text-[13px]">{{ s.advice }}</p></div>
-          </div>
-        </div>
-      </div>
-      <p class="text-center text-[#94A3B8] text-xs mt-8 max-w-xl mx-auto leading-relaxed">以上场景仅用于初步筛查，不代表最终风险结论。具体问题需由专业人员结合完整资料复核。</p>
-    </div>
-  </section>
-
-  <!-- ===== 6. 初诊流程（5步详情） ===== -->
-  <section id="flow" class="flow-bg px-6 py-20">
-    <div class="max-w-[1200px] mx-auto">
-    <div class="text-center mb-12">
-      <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">How It Works</p>
-      <h2 class="text-3xl font-bold text-[#0F172A] mb-3">初诊流程</h2>
-      <p class="text-[#64748B]">从客户填写到内部复核，形成可追踪的初诊闭环</p>
-    </div>
-    <!-- 步骤卡片 -->
-    <div class="space-y-4 max-w-3xl mx-auto">
-      <div v-for="(s, i) in flows" :key="i" class="group rounded-2xl p-5 md:p-6 transition-all duration-300 hover:-translate-y-0.5 bg-white" :class="i===3?'border border-[#FDE68A]':'border border-[#E2E8F0]/60'" :style="i===3?'background:linear-gradient(180deg,#FFFBEB 0%,#fff 100%);box-shadow:0 12px 30px rgba(217,119,6,0.06)':'box-shadow:0 12px 30px rgba(15,23,42,0.03)'">
-        <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-5 mb-3">
-          <div class="flex items-center gap-3 flex-shrink-0">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold" :class="i===3?'bg-[#FEF3C7] text-[#92400E]':'bg-[#EFF6FF] text-[#1E3A8A]'">{{ s.num }}</div>
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="i===3?'bg-[#FEF3C7]':'bg-[#EFF6FF]'"><JcIcon :name="s.icon" :size="16" :color="i===3?'#D97706':'#2563EB'" /></div>
-            <h4 class="font-bold text-[#0F172A]">{{ s.title }}</h4>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm ml-0 md:ml-[88px]">
-          <div class="bg-[#F8FAFC] rounded-xl px-4 py-3"><span class="text-[#94A3B8] text-xs font-medium uppercase tracking-wide">输入</span><p class="text-[#475569] mt-1 leading-relaxed">{{ s.input }}</p></div>
-          <div class="bg-[#EFF6FF] rounded-xl px-4 py-3"><span class="text-[#1E3A8A] text-xs font-medium uppercase tracking-wide">系统处理</span><p class="text-[#475569] mt-1 leading-relaxed">{{ s.process }}</p></div>
-          <div class="bg-[#F0FDF4] rounded-xl px-4 py-3"><span class="text-[#16A34A] text-xs font-medium uppercase tracking-wide">输出</span><p class="text-[#475569] mt-1 leading-relaxed">{{ s.output }}</p></div>
-        </div>
-      </div>
-    </div>
-    </div><!-- /max-w wrapper -->
-  </section>
-
-  <!-- ===== 7. 产品闭环展示 ===== -->
-  <section class="bg-[#FAFBFD] border-y border-[#E2E8F0]/40">
-    <div class="max-w-[1200px] mx-auto px-6 py-20">
-      <div class="text-center mb-12">
-        <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Closed Loop</p>
-        <h2 class="text-3xl font-bold text-[#0F172A] mb-3">从客户初诊到服务跟进，形成完整闭环</h2>
-        <p class="text-[#64748B] max-w-lg mx-auto">不是一张问卷，而是一个从收集、筛查、报告到复核跟进的完整工作流</p>
-      </div>
-      <div class="flex flex-col md:flex-row gap-8 items-center">
-        <!-- 左侧流程 -->
-        <div class="flex-1 space-y-3 w-full max-w-sm">
-          <div class="flex items-center gap-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-5 py-4"><div class="w-8 h-8 rounded-lg bg-[#DBEAFE] flex items-center justify-center text-sm font-bold text-[#1E3A8A]">1</div><span class="font-medium text-[#0F172A]">客户填写提交</span></div>
-          <div class="flex items-center gap-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-5 py-4"><div class="w-8 h-8 rounded-lg bg-[#DBEAFE] flex items-center justify-center text-sm font-bold text-[#1E3A8A]">2</div><span class="font-medium text-[#0F172A]">系统分层筛查</span></div>
-          <div class="flex items-center gap-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-5 py-4"><div class="w-8 h-8 rounded-lg bg-[#DBEAFE] flex items-center justify-center text-sm font-bold text-[#1E3A8A]">3</div><span class="font-medium text-[#0F172A]">生成初诊报告</span></div>
-          <div class="flex items-center gap-4 bg-[#FEF3C7] border border-[#FDE68A] rounded-xl px-5 py-4"><div class="w-8 h-8 rounded-lg bg-[#FDE68A] flex items-center justify-center text-sm font-bold text-[#92400E]">4</div><span class="font-medium text-[#0F172A]">人工复核确认</span></div>
-          <div class="flex items-center gap-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-5 py-4"><div class="w-8 h-8 rounded-lg bg-[#DBEAFE] flex items-center justify-center text-sm font-bold text-[#1E3A8A]">5</div><span class="font-medium text-[#0F172A]">商务服务跟进</span></div>
-        </div>
-        <!-- 右侧后台预览 -->
-        <div class="flex-1 w-full max-w-md">
-          <div class="bg-[#0F172A] rounded-2xl overflow-hidden shadow-xl">
-            <div class="px-5 py-3 border-b border-white/10 flex items-center gap-2">
-              <div class="flex gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-red-400"></div><div class="w-2.5 h-2.5 rounded-full bg-yellow-400"></div><div class="w-2.5 h-2.5 rounded-full bg-green-400"></div></div>
-              <span class="text-white/60 text-xs ml-2">后台 · 客户线索</span>
-            </div>
-            <div class="p-3 space-y-1.5">
-              <div v-for="(lead, i) in mockLeads" :key="i" class="flex items-center justify-between text-xs py-2 px-3 rounded-lg" :class="i%2===0?'bg-white/5':''">
-                <span class="text-white/80 font-mono">{{ lead.phone }}</span>
-                <span class="px-2 py-0.5 rounded-full text-[11px] font-medium" :class="lead.risk==='HIGH'?'bg-red-500/20 text-red-300':lead.risk==='MEDIUM'?'bg-yellow-500/20 text-yellow-300':'bg-green-500/20 text-green-300'">{{ lead.risk }}</span>
-                <span class="text-white/40">{{ lead.status }}</span>
-                <span class="text-blue-400 cursor-pointer hover:underline">查看</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== 8. 服务衔接区 ===== -->
-  <section id="services" class="services-bg px-6 py-20">
-    <div class="max-w-[1200px] mx-auto">
-    <div class="text-center mb-12">
-      <p class="text-[#1E3A8A] text-sm font-semibold mb-2 tracking-wide uppercase">Professional Services</p>
-      <h2 class="text-3xl font-bold text-[#0F172A] mb-3">初诊之后，可以衔接君册专业服务</h2>
-      <p class="text-[#64748B] max-w-lg mx-auto">初诊报告仅用于初步筛查，具体服务方案将结合企业完整资料由君册人员进一步确认</p>
-    </div>
-    <div class="grid grid-cols-3 md:grid-cols-6 gap-3 max-w-3xl mx-auto">
-      <div v-for="svc in services" :key="svc.label" class="flex flex-col items-center gap-2 bg-white border border-[#E2E8F0] rounded-2xl p-4 hover:border-[#93C5FD] hover:shadow-sm transition cursor-default">
-        <JcIcon :name="svc.icon" :size="22" color="#475569" />
-        <span class="text-xs text-[#475569] font-medium">{{ svc.label }}</span>
-      </div>
-    </div>
-    </div><!-- /max-w wrapper -->
-  </section>
-
-  <!-- ===== 9. 底部 CTA ===== -->
-  <section class="cta-bg bg-cover bg-center" style="background-image:url('/cta-bg.png')">
-    <div class="max-w-[1200px] mx-auto px-6 py-20 text-center">
-      <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mx-auto mb-5">
-        <JcIcon name="success" :size="28" color="#FBBF24" />
-      </div>
-      <h2 class="text-3xl font-bold text-white mb-3">现在开始企业财税初诊</h2>
-      <p class="text-[#94A3B8] max-w-lg mx-auto mb-8">填写基础信息后，系统将生成初步筛查结果。涉及高风险内容时，将由君册专业人员进一步复核。</p>
-      <router-link to="/diagnosis/start" class="inline-flex items-center gap-2 bg-white text-[#0F172A] px-8 py-3.5 rounded-xl font-semibold text-base hover:bg-[#F1F5F9] transition shadow-lg">
-        开始免费初诊 <JcIcon name="arrowRight" :size="18" color="#0F172A" />
-      </router-link>
-      <div class="flex items-start gap-2 justify-center mt-10 max-w-md mx-auto text-[#64748B] text-xs leading-relaxed">
-        <JcIcon name="secure" :size="14" color="#64748B" class="mt-0.5 flex-shrink-0" />
-        <span>本系统生成内容仅作为初步筛查参考，不构成最终税务、法律或审计意见。具体事项建议结合完整资料由专业人员复核。</span>
-      </div>
-    </div>
-  </section>
-
-</div>
+    </footer>
+  </div>
 </template>
+
+<style scoped>
+.home-shell {
+  background: #fff8f3;
+}
+
+.home-hero {
+  background-image: url('/brand/home-hero-office.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.hero-grid {
+  background:
+    linear-gradient(90deg, rgba(120, 86, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(120, 86, 0, 0.04) 1px, transparent 1px);
+  background-size: 78px 78px;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 24%, #000 82%, transparent 100%);
+}
+
+.text-bronze {
+  color: #785600;
+  text-shadow: 0 16px 36px rgba(120, 86, 0, 0.10);
+}
+
+.home-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(184, 134, 11, 0.20);
+  border-radius: 10px;
+  background: rgba(255, 248, 243, 0.86);
+  color: #4f4535;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(53, 48, 39, 0.04);
+}
+
+.home-avatar {
+  width: 38px;
+  height: 38px;
+  border: 2px solid #fff8f3;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.glass-card {
+  border: 1px solid rgba(216, 197, 168, 0.58);
+  background: rgba(255, 248, 243, 0.82);
+  backdrop-filter: blur(20px);
+}
+
+.home-input {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(216, 197, 168, 0.85);
+  background: rgba(255, 248, 243, 0.72);
+  padding: 0 14px;
+  color: #1a1a1a;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.home-input::placeholder {
+  color: #9a8c7a;
+}
+
+.home-input:focus {
+  border-color: #785600;
+  background: #fffdfa;
+  box-shadow: 0 0 0 3px rgba(120, 86, 0, 0.10);
+}
+
+.risk-card {
+  border: 1px solid rgba(216, 197, 168, 0.62);
+  border-left-width: 4px;
+  border-radius: 18px;
+  background: rgba(255, 253, 250, 0.84);
+  padding: 28px;
+  min-height: 280px;
+  box-shadow: 0 16px 42px rgba(53, 48, 39, 0.06);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.risk-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 58px rgba(53, 48, 39, 0.10);
+}
+
+.tone-red {
+  border-left-color: #9f1d1d;
+  color: #9f1d1d;
+}
+
+.tone-gold {
+  border-left-color: #785600;
+  color: #785600;
+}
+
+.tone-ink {
+  border-left-color: #153d4a;
+  color: #153d4a;
+}
+
+.risk-icon {
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  background: currentColor;
+  color: #fff8f3;
+  opacity: 0.92;
+}
+
+.risk-tag {
+  border-radius: 999px;
+  background: rgba(184, 134, 11, 0.12);
+  color: #785600;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.service-card {
+  border: 1px solid rgba(216, 197, 168, 0.58);
+  border-radius: 18px;
+  background: rgba(253, 242, 229, 0.56);
+  padding: 24px;
+  box-shadow: 0 12px 28px rgba(53, 48, 39, 0.04);
+  transition: transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-4px);
+  background: #f3e6c8;
+  box-shadow: 0 20px 44px rgba(53, 48, 39, 0.09);
+}
+
+@media (max-width: 768px) {
+  .home-hero {
+    min-height: auto;
+  }
+}
+</style>

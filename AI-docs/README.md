@@ -16,7 +16,7 @@
 
 **终端**：响应式 H5 网站（手机 + PC 均可访问）。
 
-**当前阶段**：V2 企业经营初诊系统 — 全量重构已完成。后端 22 API / 18 模型 / 8 枚举，前端 9 路由 / 7 组件。分支 `feature/v2-business-diagnosis`。
+**当前阶段**：V2 企业经营初诊系统 — 技术闭环已完成，客户侧前端已完成 Stitch 黑金咨询风格升级。后端 22 API / 18 模型 / 8 枚举，前端客户流程、报告页、品牌资产已统一。分支 `feature/v2-business-diagnosis`。
 
 ---
 
@@ -58,7 +58,7 @@
 |------|------|------|
 | 纪姐确认九维/四维定义 | 规则精调方向 | 🟡 中（当前版本已可用） |
 | 纪姐确认风险场景优先级 | 场景排序微调 | 🟢 后续 |
-| 品牌素材（Logo/色系） | 网站和报告品牌标识 | 🟢 后续 |
+| 品牌素材（Logo/色系） | 网站和报告品牌标识 | ✅ 已完成基础落地 `[06-28]` |
 
 > 详细需求资料清单见 [AI_WEBDEVELOP_REQS.md](AI_WEBDEVELOP_REQS.md)
 
@@ -93,6 +93,7 @@
 | **TESTING_GUIDE.md** | 测试指南 | ✅ `[06-22]` |
 | **TEST_RESULTS.md** | 测试结果记录 | ⏳ |
 | **FRONTEND_HANDOFF.md** | 前端交接说明 | ⏳ |
+| **FRONTEND_STITCH_REDESIGN_20260628.md** | Stitch 视觉升级与品牌资产交接记录 | ✅ `[06-28]` |
 | **DEPLOYMENT_GUIDE.md** | 部署说明 | ✅ |
 | **project-note.md** | 开发日志/学习手册，每一步操作的教学讲解 | ✅ |
 | **AI_DIAGNOSIS_MVP_DEV_PLAN.md** | MVP 开发方案 v2，最高开发依据 | ✅ |
@@ -101,14 +102,13 @@
 
 ## 七、下一步
 
-1. **编写 DEMO_CASES_V2.md**：3 套完整演示案例（低/中/高风险企业）
-2. **浏览器端到端验证**：走通完整 V2 流程（start → upload → questionnaire → report → admin review）
-3. **前端 skipLogic 实现**：按初诊模式过滤题量（快速20-25/标准35-45/深度50-65）
-4. **ECharts 按需加载**：减小 ReportPage chunk（当前1.1MB）
-5. **Code Review + PR**：`feature/v2-business-diagnosis` → `main`
-6. **给纪姐演示**：使用 V2 系统做第一期演示
+1. **浏览器端到端验证**：走通完整 V2 流程（start → upload → questionnaire → report → admin review）
+2. **编写/维护 DEMO_CASES_V2.md**：3 套完整演示案例（低/中/高风险企业）
+3. **ECharts 按需加载**：减小 ReportPage chunk（当前约 1.1MB）
+4. **Code Review + PR**：`feature/v2-business-diagnosis` → `main`
+5. **给纪姐演示**：使用 V2 系统做第一期演示
 
 ---
 
-> 最后更新：2026-06-23（V2 企业经营初诊系统全量重构完成）
+> 最后更新：2026-06-28（客户侧 Stitch 黑金视觉升级完成）
 > 维护要求：每次 AI 初诊项目有进展（资料到货、技术选型确定、开发启动等）时更新本文件。

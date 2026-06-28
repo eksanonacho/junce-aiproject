@@ -4,6 +4,83 @@
 
 ---
 
+## 2026-06-28 第13步：客户侧 Stitch 黑金视觉升级 + 品牌资产落地
+
+### 做了什么
+
+完成客户侧前端视觉升级，将首页、开始初诊、上传资料、问卷、提交成功、报告页统一到 Stitch 设计稿的黑金咨询风格。
+
+**设计文档归档**：
+- 将 Stitch 设计稿整理到 `AI-docs/JUNCE-DESIGN-DOC/`
+- 新增 `AI-docs/FRONTEND_STITCH_REDESIGN_20260628.md`
+- 更新 `README.md`、`PROJECT_STATE_SNAPSHOT.md`、`FRONTEND_HANDOFF.md`
+
+**品牌资产**：
+- 采用“方印章 icon + 君册财税字标”的组合
+- 资产位置：
+  - `AI-docs/JUNCE-DESIGN-DOC/logo-assets/junce-seal-icon.png`
+  - `AI-docs/JUNCE-DESIGN-DOC/logo-assets/junce-wordmark.png`
+  - `ai-diagnosis-client/public/brand/junce-seal-icon.png`
+  - `ai-diagnosis-client/public/brand/junce-wordmark.png`
+- 新增统一品牌组件 `JcBrand.vue`
+
+**客户侧页面**：
+- 首页 `/`：对齐 Stitch `_1`，改为 Hero、风险穿透、流程、服务、CTA、页脚
+- 开始初诊 `/diagnosis/start`：对齐 `_2`，保留手机号查重和三档模式创建逻辑
+- 上传资料 `/diagnosis/upload`：对齐 `_3`，资料清单 + 完整度仪表盘 + 底部固定操作栏
+- 问卷 `/questionnaire`：对齐 `_4`，沉浸式问题卡 + 右侧进度面板
+- 成功页 `/questionnaire/success`：对齐 `_5`，五步进度 + 状态 Bento 卡
+- 报告页 `/report/:publicId?token=xxx`：沿用 `_6` 方向和 V2 高级报告结构
+
+### 为什么这么做
+
+- 当前 V2 技术闭环已完成，下一阶段重点是“老板一眼觉得专业可信”
+- Stitch 设计稿提供了统一黑金咨询风格，需要前端尽量高还原
+- 客户侧页面是外部获客第一触点，必须比普通系统后台更高级
+- 视觉改造不能破坏后端闭环，因此所有接口、规则、schema、seed 都保持不变
+
+### 踩了哪些坑
+
+1. **Logo 不能粗暴矩形裁切**
+   - 初版只是裁图，导致不对称、带底色、缺字、色差
+   - 修复：重新做透明 PNG 抠图，确认 RGBA 且角落 alpha 为 0
+
+2. **不能照搬 Stitch 假功能**
+   - Stitch 里有“下载 PDF”“AES-256”等展示文案，但当前后端没有对应接口或证明
+   - 修复：只保留有真实流程支撑的按钮和保守安全文案
+
+3. **问卷页不能重写业务逻辑**
+   - 问卷页包含 skipLogic、必填校验、V1/V2 双流程提交
+   - 修复：保留脚本逻辑，只替换视觉结构和样式
+
+4. **报告页仍有 chunk 体积提示**
+   - ECharts 全量依赖导致 ReportPage chunk 约 1.1MB
+   - 后续可按需加载优化
+
+### 验证命令
+
+```bash
+cd ai-diagnosis-client
+pnpm build
+```
+
+验证结果：前端 build 通过。
+
+### 边界确认
+
+本轮未修改：
+
+- 后端业务逻辑
+- Prisma schema
+- seed 规则/题库
+- API 结构
+- 文件上传接口
+- 问卷提交接口
+- 管理后台接口
+- `/Users/a1234/cpp/junce-miniprogram/`
+
+---
+
 ## 2026-06-23 第12步：V2 企业经营初诊系统 — 全量重构
 
 ### 做了什么

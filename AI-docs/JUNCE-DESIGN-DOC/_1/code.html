@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>君册财税 AI - 企业经营初诊系统</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#4f4535",
+                    "surface-dim": "#e3d8cc",
+                    "on-primary": "#ffffff",
+                    "tertiary-container": "#3477bc",
+                    "tertiary": "#085ea2",
+                    "surface-container-highest": "#ece1d4",
+                    "inverse-surface": "#353027",
+                    "on-secondary-container": "#636262",
+                    "secondary": "#5f5e5e",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "surface-container-high": "#f1e7d9",
+                    "background": "#fff8f3",
+                    "on-tertiary": "#ffffff",
+                    "on-surface": "#201b13",
+                    "tertiary-fixed": "#d2e4ff",
+                    "primary": "#785600",
+                    "inverse-primary": "#f7bd48",
+                    "primary-fixed": "#ffdea6",
+                    "on-primary-fixed-variant": "#5d4200",
+                    "primary-fixed-dim": "#f7bd48",
+                    "secondary-fixed": "#e5e2e1",
+                    "surface": "#fff8f3",
+                    "outline": "#817563",
+                    "surface-ink": "#121212",
+                    "surface-variant": "#ece1d4",
+                    "surface-bright": "#fff8f3",
+                    "surface-warm-gray": "#F9F8F6",
+                    "on-secondary-fixed": "#1c1b1b",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "on-tertiary-container": "#fdfcff",
+                    "outline-variant": "#d3c4af",
+                    "surface-tint": "#7b5800",
+                    "status-warning": "#D97706",
+                    "surface-container": "#f7ecdf",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#e2dfde",
+                    "inverse-on-surface": "#faefe2",
+                    "on-error": "#ffffff",
+                    "status-error": "#991B1B",
+                    "on-primary-fixed": "#271900",
+                    "tertiary-fixed-dim": "#a1c9ff",
+                    "on-primary-container": "#fffbff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#004880",
+                    "on-background": "#201b13",
+                    "surface-container-low": "#fdf2e5",
+                    "status-success": "#065F46",
+                    "primary-container": "#986d00",
+                    "on-secondary-fixed-variant": "#474746",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed": "#001c37"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "8px",
+                    "margin-desktop": "40px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "number-xl": ["Plus Jakarta Sans"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "number-xl": ["40px", {"lineHeight": "1", "letterSpacing": "-0.03em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(229, 229, 229, 0.5);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(120, 86, 0, 0.4);
+            box-shadow: 0 10px 25px -5px rgba(120, 86, 0, 0.1), inset 0 0 15px rgba(120, 86, 0, 0.05);
+        }
+        .text-gradient-bronze {
+            background: linear-gradient(135deg, #785600 0%, #B48A00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        @media (prefers-reduced-motion: no-preference) {
+            .animate-hero-up {
+                animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            .delay-100 { animation-delay: 100ms; }
+            .delay-200 { animation-delay: 200ms; }
+            .delay-300 { animation-delay: 300ms; }
+            .delay-400 { animation-delay: 400ms; }
+            
+            .scroll-reveal {
+                opacity: 0;
+                transform: translateX(-20px);
+                transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .scroll-reveal.visible {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            
+            @keyframes slideUpFade {
+                from { opacity: 0; transform: translateY(30px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            @keyframes pulse-soft {
+                0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(120, 86, 0, 0.4); }
+                50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(120, 86, 0, 0); }
+            }
+            .animate-pulse-soft {
+                animation: pulse-soft 2s infinite;
+            }
+        }
+        
+        #shader-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+    </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body class="bg-surface-warm-gray text-on-surface font-body-md overflow-x-hidden relative">
+<!-- WebGL Background -->
+<canvas id="shader-canvas"></canvas>
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-20 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm transition-all duration-300">
+<div class="font-headline-lg text-headline-lg font-bold text-primary">君册财税</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-label-md text-label-md transition-colors" href="#">覆盖场景</a>
+<a class="text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors" href="#">初诊流程</a>
+<a class="text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors" href="#">衔接服务</a>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-label-md text-label-md hover:bg-primary/90 hover:scale-[0.98] active:scale-95 transition-all duration-200">开始初诊</button>
+</nav>
+<main class="pt-20">
+<!-- Hero Section -->
+<section class="relative min-h-[870px] flex items-center px-margin-desktop py-24 overflow-hidden" style="background-image: linear-gradient(rgba(255, 248, 243, 0.85), rgba(255, 248, 243, 0.85)), url('https://lh3.googleusercontent.com/aida-public/AB6AXuCg_xf4betcPaHX1xXOBKJ-pV-4jW1ZZZxJ5Ko1r5AUiJL2MxqvA9Cx2n1dXgYKKeB7pzbYiVrCHLqDwOB0MWPEtmRGYdgtCsWzpUsCtGR7KiUCDlapndKAySUBzj6syK5557_xsw8bg-clgTWZk1cluVYig3TTvnMn8Se7U-vBl4-QBLjgYCzmm3uByQ0k0I91Zu38KkTIfjyNB_-lvhaqxWA29dr1nwVIYe2xlxHtThDvk02VWQI7fIzUJ3LRxbRzxqJ2O4ZnOIA'); background-size: cover; background-position: center;">
+<div class="max-w-container-max mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+<!-- Left: Branding & Value Prop -->
+<div class="lg:col-span-7 space-y-8">
+<div class="animate-hero-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md border border-primary/20">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+                        君册财税 · 企业财税风险初筛
+                    </div>
+<h1 class="animate-hero-up delay-100 font-display-lg text-display-lg tracking-tight">
+                        AI <span class="text-gradient-bronze">企业经营初诊系统</span>
+</h1>
+<p class="animate-hero-up delay-200 font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                        通过结构化问卷与资料上传，利用 AI 算法快速识别企业在税务申报、发票流水、用工合规及经营状态中的潜在风险，为您提供精准、权威的风险合规体检。
+                    </p>
+<div class="animate-hero-up delay-300 flex flex-wrap gap-4 items-center">
+<div class="flex items-center gap-2 bg-surface px-3 py-1 rounded-lg border border-outline-variant/30 hover:border-primary/50 transition-colors cursor-default">
+<span class="material-symbols-outlined text-primary text-sm">schedule</span>
+<span class="text-label-md">3分钟填写</span>
+</div>
+<div class="flex items-center gap-2 bg-surface px-3 py-1 rounded-lg border border-outline-variant/30 hover:border-primary/50 transition-colors cursor-default">
+<span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+<span class="text-label-md">自动生成初诊结果</span>
+</div>
+<div class="flex items-center gap-2 bg-surface px-3 py-1 rounded-lg border border-outline-variant/30 hover:border-primary/50 transition-colors cursor-default">
+<span class="material-symbols-outlined text-primary text-sm">person_search</span>
+<span class="text-label-md">高风险人工复核</span>
+</div>
+</div>
+<div class="animate-hero-up delay-400 flex gap-4 items-center pt-4">
+<div class="flex -space-x-3">
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-gray-200" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBxYVzzDaELxI3dZ3YPd1Doex0J_85IY3FNtR2YABRWSIjayBx0QAdaii71WCvOFepdK87lVKvT0AsmfXKe3ICcEYexMR7Y7M0smVuZHt8GjQv1rYhJbtFWuPw9-CD8ZY-SJHKzh-7XOYNXr_qjMawAAROvLfgmkfRSHAeK6_QMTy4WNzAw0KuskjpztBdpJ0pa2dLYzi9hN9T5v0jXpDC3ZcA-qkT0jfU50lmMKxjufXmkIo6LshUmEMJN7uhlIKNtFYeBDItagwg')"></div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-gray-300" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBCrHnqH3c4pgSB38GE_XZPOdAdNI9blK7sT2HE6oI3mA4e0agpbQAODhE9qk2DlkqSMsa0tuQvMV-L1qrO6_sERymTaHV5PAYr7fRi1qQmwHloyvB2gbnWbNgDTAjn0L2OtZqfKsKLvMVWraNMEL8ounqSnDPX2vY1Uv0df1qVORCtrLuDseD3k8Q5yf7OQ4LlS63fKxJt2kBhCjdqrGC0yKbZuRzH-dO3C6KIhxN4MrPqeO3fJDuDylAsgS2OwZ_Az6MZO-bmVKk')"></div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-gray-400" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCAh73UfriN65SofZBo15aCf3qOihZ2gGlXDy_Ej3y3G0S1kyRHgoDNURfOgZ-fEssoAIKF0l2opUNCeVMw6npMEfyYsVeL2R0om4EEy2eDXfyayN9_OfVcno696fwc27J5f0BN63izZUb8mZvg4jibe7BHBbunW-EkHod-3vtYbb8GYjDt8k_0mSlTeAAxCzeuDBir08vMjkJKoI9fMxuC7GU42UoaAOHL3vULeHBDHNMUfa4WQrMgKANR12H8pC9VZuQtCjzVA3w')"></div>
+</div>
+<span class="text-on-surface-variant font-label-md text-label-md">已为 5,000+ 企业提供风险预警</span>
+</div>
+</div>
+<!-- Right: Quick Start Card -->
+<div class="lg:col-span-5 animate-hero-up delay-300">
+<div class="glass-card p-8 rounded-[24px] shadow-2xl relative overflow-hidden group hover:shadow-primary/10">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity duration-300">
+<span class="material-symbols-outlined text-6xl">analytics</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-6">开始企业经营初诊</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">
+                            上传经营资料并补充关键信息，系统将生成利润、风险、现金流、效率四维经营看板。
+                        </p>
+<form class="space-y-4">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2 transition-colors">手机号码</label>
+<div class="relative group/input">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline group-focus-within/input:text-primary transition-colors">smartphone</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200" placeholder="请输入您的联系方式" type="tel"/>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2">验证码</label>
+<div class="flex gap-2">
+<div class="relative flex-1 group/input">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline group-focus-within/input:text-primary transition-colors">lock</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200" placeholder="6位数字" type="text"/>
+</div>
+<button class="px-4 py-3 border border-primary text-primary font-label-md text-label-md rounded-xl hover:bg-primary-fixed hover:text-on-primary-fixed transition-colors duration-200" type="button">获取验证码</button>
+</div>
+</div>
+<div class="pt-4">
+<button class="w-full bg-primary text-on-primary py-4 rounded-xl font-headline-md text-headline-md shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200" type="submit">
+                                    开始免费初诊
+                                </button>
+</div>
+<div class="space-y-2">
+<p class="text-center font-label-md text-label-md text-on-surface-variant/70 flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-sm">security</span>
+                                    信息仅用于初诊，受金融级加密保护
+                                </p>
+</div>
+</form>
+</div>
+</div>
+</div>
+</section>
+<!-- Risk Scenarios (Bento Grid) -->
+<section class="py-24 px-margin-desktop bg-surface/80 backdrop-blur-sm relative z-10">
+<div class="max-w-container-max mx-auto">
+<div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
+<div class="max-w-2xl">
+<h2 class="font-display-lg text-display-lg mb-4">全维度风险穿透</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">针对核心经营环节，提供多层次的数据扫描与预警分析，涵盖税务、票据及用工等六大核心场景。</p>
+</div>
+<div class="hidden md:flex items-center gap-2 text-primary font-bold cursor-pointer hover:gap-3 transition-all duration-300">
+<span>查看所有覆盖场景</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Tax Risk -->
+<div class="glass-card p-8 rounded-[24px] border-l-4 border-l-status-error flex flex-col h-full cursor-pointer">
+<div class="flex justify-between items-start mb-6">
+<span class="material-symbols-outlined p-3 bg-error-container text-status-error rounded-xl transition-transform duration-300 group-hover:scale-110">account_balance</span>
+<span class="bg-error-container text-status-error px-3 py-1 rounded-full font-label-md text-label-md">税务申报异常</span>
+</div>
+<h4 class="font-headline-md text-headline-md mb-4">税务风险识别</h4>
+<ul class="space-y-3 flex-grow">
+<li class="flex gap-2 font-body-md text-body-md">
+<span class="text-status-error font-bold">●</span>
+<span>核心：税负率异常监控</span>
+</li>
+<li class="flex gap-2 font-body-md text-body-md">
+<span class="text-status-warning font-bold">●</span>
+<span>信号：长期零申报/虚假申报扫描</span>
+</li>
+<li class="flex gap-2 font-body-md text-body-md">
+<span class="text-status-success font-bold">●</span>
+<span>建议：行业对标优化及合规申报</span>
+</li>
+</ul>
+</div>
+<!-- Invoice Compliance -->
+<div class="glass-card p-8 rounded-[24px] border-l-4 border-l-primary flex flex-col h-full cursor-pointer">
+<div class="flex justify-between items-start mb-6">
+<span class="material-symbols-outlined p-3 bg-primary-fixed text-primary rounded-xl transition-transform duration-300 group-hover:scale-110">receipt_long</span>
+<span class="bg-primary-fixed text-primary px-3 py-1 rounded-full font-label-md text-label-md">发票与流水</span>
+</div>
+<h4 class="font-headline-md text-headline-md mb-4">票据合规穿透</h4>
+<ul class="space-y-3 flex-grow">
+<li class="flex gap-2 font-body-md text-body-md">
+<span class="text-primary font-bold">●</span>
+<span>核心：虚开发票疑点及资金流水对碰</span>
+</li>
+<li class="flex gap-2 font-body-md text-body-md">
+<span class="text-status-warning font-bold">●</span>
+<span>信号：上下游关系网异常核查</span>
+</li>
+<li class="flex gap-2 font-body-md text-body-md">
+<span class="text-status-success font-bold">●</span>
+<span>建议：规范化入账与资金管理流程</span>
+</li>
+</ul>
+</div>
+<!-- Labor & HR -->
+<div class="glass-card p-8 rounded-[24px] border-l-4 border-l-tertiary flex flex-col h-full cursor-pointer">
+<div class="flex justify-between items-start mb-6">
+<span class="material-symbols-outlined p-3 bg-tertiary-fixed text-tertiary rounded-xl transition-transform duration-300 group-hover:scale-110">groups</span>
+<span class="bg-tertiary-fixed text-tertiary px-3 py-1 rounded-full font-label-md text-label-md">社保用工</span>
+</div>
+<h4 class="font-headline-md text-headline-md mb-4">用工与社保风控</h4>
+<ul class="space-y-3 flex-grow">
+<li class="flex gap-2 font-body-md text-body-md">
+<span class="text-tertiary font-bold">●</span>
+<span>核心：劳务派遣与社保合规分析</span>
+</li>
+<li class="flex gap-2 font-body-md text-body-md">
+<span class="text-status-warning font-bold">●</span>
+<span>信号：个税与社保基数不一致监测</span>
+</li>
+<li class="flex gap-2 font-body-md text-body-md">
+<span class="text-status-success font-bold">●</span>
+<span>建议：多元化用工成本优化方案</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<!-- Process Section -->
+<section class="py-24 px-margin-desktop bg-surface-warm-gray relative z-10">
+<div class="max-w-container-max mx-auto text-center mb-16">
+<h2 class="font-display-lg text-display-lg mb-4">诊断标准化流程</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">科学、严谨、高效的五步走诊断法，助力企业稳健经营</p>
+</div>
+<div class="max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-5 gap-4 relative" id="process-steps">
+<!-- Connector Line (Desktop) -->
+<div class="hidden md:block absolute top-1/2 left-0 w-full h-[2px] bg-outline-variant -translate-y-1/2 z-0"></div>
+<!-- Steps -->
+<div class="scroll-reveal relative z-10 flex flex-col items-center group" style="transition-delay: 0ms">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest border-4 border-surface flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-on-primary group-hover:scale-110 transition-all duration-300">
+<span class="material-symbols-outlined">data_object</span>
+</div>
+<div class="bg-surface p-4 rounded-xl shadow-sm border border-outline-variant/30 w-full group-hover:shadow-md group-hover:border-primary/30 transition-all duration-300">
+<h5 class="font-headline-md text-headline-md text-[18px] mb-1">01 信息收集</h5>
+<p class="font-label-md text-label-md text-on-secondary-container">录入企业核心经营数据与资料</p>
+</div>
+</div>
+<div class="scroll-reveal relative z-10 flex flex-col items-center group" style="transition-delay: 150ms">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest border-4 border-surface flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-on-primary group-hover:scale-110 transition-all duration-300">
+<span class="material-symbols-outlined">rule</span>
+</div>
+<div class="bg-surface p-4 rounded-xl shadow-sm border border-outline-variant/30 w-full group-hover:shadow-md group-hover:border-primary/30 transition-all duration-300">
+<h5 class="font-headline-md text-headline-md text-[18px] mb-1">02 规则匹配</h5>
+<p class="font-label-md text-label-md text-on-secondary-container">AI 自动匹配现行财税法规规则</p>
+</div>
+</div>
+<div class="scroll-reveal relative z-10 flex flex-col items-center group" style="transition-delay: 300ms">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest border-4 border-surface flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-on-primary group-hover:scale-110 transition-all duration-300">
+<span class="material-symbols-outlined">assignment</span>
+</div>
+<div class="bg-surface p-4 rounded-xl shadow-sm border border-outline-variant/30 w-full group-hover:shadow-md group-hover:border-primary/30 transition-all duration-300">
+<h5 class="font-headline-md text-headline-md text-[18px] mb-1">03 生成报告</h5>
+<p class="font-label-md text-label-md text-on-secondary-container">多维度评估生成可视化看板报告</p>
+</div>
+</div>
+<div class="scroll-reveal relative z-10 flex flex-col items-center group" style="transition-delay: 450ms">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest border-4 border-surface flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-on-primary group-hover:scale-110 transition-all duration-300">
+<span class="material-symbols-outlined">rate_review</span>
+</div>
+<div class="bg-surface p-4 rounded-xl shadow-sm border border-outline-variant/30 w-full group-hover:shadow-md group-hover:border-primary/30 transition-all duration-300">
+<h5 class="font-headline-md text-headline-md text-[18px] mb-1">04 专家复核</h5>
+<p class="font-label-md text-label-md text-on-secondary-container">资深财务总监对高风险细节审视</p>
+</div>
+</div>
+<div class="scroll-reveal relative z-10 flex flex-col items-center group" style="transition-delay: 600ms">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest border-4 border-surface flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-on-primary group-hover:scale-110 transition-all duration-300">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+<div class="bg-surface p-4 rounded-xl shadow-sm border border-outline-variant/30 w-full group-hover:shadow-md group-hover:border-primary/30 transition-all duration-300">
+<h5 class="font-headline-md text-headline-md text-[18px] mb-1">05 服务落地</h5>
+<p class="font-label-md text-label-md text-on-secondary-container">提供落地整改建议与长期服务方案</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Service Grid -->
+<section class="py-24 px-margin-desktop bg-surface/90 backdrop-blur-sm overflow-hidden relative z-10">
+<!-- Background Decorative Element -->
+<div class="absolute -right-24 top-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+<div class="max-w-container-max mx-auto relative z-10">
+<div class="text-center mb-16">
+<h2 class="font-display-lg text-display-lg mb-4">后续深度服务</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">针对初诊结果，提供端到端的专业财税解决方案。</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Service Item -->
+<div class="bg-surface-container-low p-6 rounded-2xl hover:bg-primary-fixed hover:-translate-y-1 transition-all duration-300 border border-outline-variant/20 shadow-sm hover:shadow-md cursor-pointer">
+<h6 class="font-headline-md text-headline-md text-[20px] mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">book</span>
+                            代理记账
+                        </h6>
+<p class="font-body-md text-body-md text-on-surface-variant">精准录入，实时预警，让账目成为企业经营的指南针。</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-2xl hover:bg-primary-fixed hover:-translate-y-1 transition-all duration-300 border border-outline-variant/20 shadow-sm hover:shadow-md cursor-pointer">
+<h6 class="font-headline-md text-headline-md text-[20px] mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">gavel</span>
+                            合规整改
+                        </h6>
+<p class="font-body-md text-body-md text-on-surface-variant">梳理历史遗留问题，建立长效的财税合规管理体系。</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-2xl hover:bg-primary-fixed hover:-translate-y-1 transition-all duration-300 border border-outline-variant/20 shadow-sm hover:shadow-md cursor-pointer">
+<h6 class="font-headline-md text-headline-md text-[20px] mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">payments</span>
+                            税务筹划
+                        </h6>
+<p class="font-body-md text-body-md text-on-surface-variant">合法节税，优化资产结构，提升企业现金流综合效益。</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-2xl hover:bg-primary-fixed hover:-translate-y-1 transition-all duration-300 border border-outline-variant/20 shadow-sm hover:shadow-md cursor-pointer">
+<h6 class="font-headline-md text-headline-md text-[20px] mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">contract</span>
+                            工商变更
+                        </h6>
+<p class="font-body-md text-body-md text-on-surface-variant">高效办理各类工商变更、资质办理及异常名录处理。</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-2xl hover:bg-primary-fixed hover:-translate-y-1 transition-all duration-300 border border-outline-variant/20 shadow-sm hover:shadow-md cursor-pointer">
+<h6 class="font-headline-md text-headline-md text-[20px] mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">domain</span>
+                            注销清算
+                        </h6>
+<p class="font-body-md text-body-md text-on-surface-variant">专业清理税务历史问题，安全高效办理企业退出流程。</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-2xl hover:bg-primary-fixed hover:-translate-y-1 transition-all duration-300 border border-outline-variant/20 shadow-sm hover:shadow-md cursor-pointer">
+<h6 class="font-headline-md text-headline-md text-[20px] mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">insights</span>
+                            财务外包
+                        </h6>
+<p class="font-body-md text-body-md text-on-surface-variant">派遣资深财务团队，深度参与并优化企业日常财务管理。</p>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-24 px-margin-desktop relative z-10">
+<div class="max-w-container-max mx-auto rounded-[32px] bg-surface-ink text-on-primary-container p-12 md:p-20 relative overflow-hidden group">
+<!-- Animated gradient background on hover -->
+<div class="absolute inset-0 bg-gradient-to-br from-surface-ink via-surface-ink to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+<div class="relative z-10 text-center space-y-8">
+<h2 class="font-display-lg text-display-lg text-on-primary">准备好进行企业“经营体检”了吗？</h2>
+<p class="font-body-lg text-body-lg text-on-secondary-fixed max-w-2xl mx-auto">
+                        每一个经营风险都是潜伏的危机。现在就开始，为您的企业赢得更稳健、更长远的发展空间。
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+<button class="animate-pulse-soft px-10 py-5 bg-primary text-on-primary rounded-2xl font-headline-md text-headline-md hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg shadow-primary/20">
+                            即刻开始初诊
+                        </button>
+<button class="px-10 py-5 border border-outline text-white rounded-2xl font-headline-md text-headline-md hover:bg-white/10 hover:border-white transition-all duration-300">
+                            查看初诊流程
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4 bg-surface-warm-gray border-t border-outline-variant/20 relative z-10">
+<div class="flex flex-col items-center md:items-start gap-2">
+<div class="font-headline-md text-headline-md text-primary hover:text-primary-container transition-colors cursor-pointer">君册财税</div>
+<div class="font-body-md text-body-md text-secondary text-center md:text-left">© 2024 君册财税 AI. 保留所有权利。初诊报告仅供参考。</div>
+</div>
+<div class="flex gap-8">
+<a class="text-on-secondary-container hover:text-primary font-label-md text-label-md transition-colors duration-300" href="#">隐私政策</a>
+<a class="text-on-secondary-container hover:text-primary font-label-md text-label-md transition-colors duration-300" href="#">服务条款</a>
+<a class="text-on-secondary-container hover:text-primary font-label-md text-label-md transition-colors duration-300" href="#">数据安全</a>
+</div>
+</footer>
+<script>
+        // Micro-interactions for form focus
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.parentElement.classList.add('scale-[1.02]');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.parentElement.classList.remove('scale-[1.02]');
+            });
+        });
+
+        // Intersection Observer for scroll animations
+        document.addEventListener('DOMContentLoaded', () => {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // Optional: stop observing once animated
+                        // observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.scroll-reveal').forEach(el => {
+                observer.observe(el);
+            });
+            
+            // Setup WebGL Background
+            initWebGL();
+        });
+
+        // WebGL Shader Setup
+        function initWebGL() {
+            const canvas = document.getElementById('shader-canvas');
+            if (!canvas) return;
+
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+            const geometry = new THREE.PlaneGeometry(2, 2);
+
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    u_time: { value: 0.0 },
+                    u_resolution: { value: new THREE.Vector2() },
+                    u_mouse: { value: new THREE.Vector2(0.5, 0.5) }
+                },
+                vertexShader: `
+                    varying vec2 v_texCoord;
+                    void main() {
+                        v_texCoord = uv;
+                        gl_Position = vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform float u_time;
+                    uniform vec2 u_resolution;
+                    uniform vec2 u_mouse;
+                    varying vec2 v_texCoord;
+
+                    void main() {
+                        vec2 uv = v_texCoord;
+                        
+                        // Slow, elegant movement for a premium feel
+                        float time = u_time * 0.15;
+                        
+                        // Create a base gradient using the brand's amber gold tones
+                        vec3 color1 = vec3(0.72, 0.52, 0.04); // #b8860b (Amber Gold)
+                        vec3 color2 = vec3(0.98, 0.95, 0.90); // Warm surface-container
+                        vec3 color3 = vec3(0.10, 0.10, 0.10); // Rock Grey accent
+                        
+                        // Add subtle noise and light shifts
+                        float n1 = sin(uv.x * 3.0 + time) * cos(uv.y * 2.0 - time * 0.8);
+                        float n2 = sin(uv.y * 4.0 - time * 1.2) * cos(uv.x * 3.5 + time * 0.5);
+                        
+                        float mixFactor = smoothstep(0.3, 0.7, uv.y + n1 * 0.05 + n2 * 0.03);
+                        vec3 baseColor = mix(color2, color1, mixFactor * 0.15); // Very subtle amber tint
+                        
+                        // Subtle mouse interaction
+                        vec2 mouse = u_mouse / u_resolution;
+                        float dist = length(uv - mouse);
+                        float spotlight = smoothstep(0.5, 0.0, dist);
+                        baseColor += color1 * spotlight * 0.05;
+                        
+                        gl_FragColor = vec4(baseColor, 1.0);
+                    }
+                `
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+
+            function resize() {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                material.uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+
+            let mouseX = window.innerWidth / 2;
+            let mouseY = window.innerHeight / 2;
+            
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = window.innerHeight - e.clientY; // Flip Y for WebGL
+            });
+
+            const clock = new THREE.Clock();
+
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Only animate if prefers-reduced-motion is not true
+                const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (!prefersReducedMotion) {
+                    material.uniforms.u_time.value = clock.getElapsedTime();
+                    
+                    // Smooth mouse interpolation
+                    material.uniforms.u_mouse.value.x += (mouseX - material.uniforms.u_mouse.value.x) * 0.05;
+                    material.uniforms.u_mouse.value.y += (mouseY - material.uniforms.u_mouse.value.y) * 0.05;
+                }
+                
+                renderer.render(scene, camera);
+            }
+
+            animate();
+        }
+    </script>
+</body></html>

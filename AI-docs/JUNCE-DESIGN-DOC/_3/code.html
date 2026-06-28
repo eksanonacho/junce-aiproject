@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>上传财务数据 | 珺策金融 (Junce Financial)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(229, 229, 229, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d3c4af;
+            border-radius: 10px;
+        }
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 3s ease-in-out infinite;
+        }
+        
+        /* New Animations */
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+        .delay-500 { animation-delay: 500ms; }
+        .delay-600 { animation-delay: 600ms; }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        .animate-breathe {
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes border-dance {
+            0% { background-position: 0px 0px, 100% 100%, 0px 100%, 100% 0px; }
+            100% { background-position: 24px 0px, calc(100% - 24px) 100%, 0px calc(100% - 24px), 100% 24px; }
+        }
+        .running-border {
+            background-image: 
+                linear-gradient(90deg, rgba(129, 117, 99, 0.5) 50%, transparent 50%), 
+                linear-gradient(90deg, rgba(129, 117, 99, 0.5) 50%, transparent 50%), 
+                linear-gradient(0deg, rgba(129, 117, 99, 0.5) 50%, transparent 50%), 
+                linear-gradient(0deg, rgba(129, 117, 99, 0.5) 50%, transparent 50%);
+            background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+            background-size: 16px 2px, 16px 2px, 2px 16px, 2px 16px;
+            background-position: 0px 0px, 100% 100%, 0px 100%, 100% 0px;
+            animation: border-dance 1.5s infinite linear;
+            border: none !important;
+        }
+        .running-border:hover {
+            background-image: 
+                linear-gradient(90deg, #785600 50%, transparent 50%), 
+                linear-gradient(90deg, #785600 50%, transparent 50%), 
+                linear-gradient(0deg, #785600 50%, transparent 50%), 
+                linear-gradient(0deg, #785600 50%, transparent 50%);
+        }
+        
+        .progress-bar {
+            width: 0;
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#4f4535",
+                        "surface-dim": "#e3d8cc",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#3477bc",
+                        "tertiary": "#085ea2",
+                        "surface-container-highest": "#ece1d4",
+                        "inverse-surface": "#353027",
+                        "on-secondary-container": "#636262",
+                        "secondary": "#5f5e5e",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#f1e7d9",
+                        "background": "#fff8f3",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#201b13",
+                        "tertiary-fixed": "#d2e4ff",
+                        "primary": "#785600",
+                        "inverse-primary": "#f7bd48",
+                        "primary-fixed": "#ffdea6",
+                        "on-primary-fixed-variant": "#5d4200",
+                        "primary-fixed-dim": "#f7bd48",
+                        "secondary-fixed": "#e5e2e1",
+                        "surface": "#fff8f3",
+                        "outline": "#817563",
+                        "surface-ink": "#121212",
+                        "surface-variant": "#ece1d4",
+                        "surface-bright": "#fff8f3",
+                        "surface-warm-gray": "#F9F8F6",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-tertiary-container": "#fdfcff",
+                        "outline-variant": "#d3c4af",
+                        "surface-tint": "#7b5800",
+                        "status-warning": "#D97706",
+                        "surface-container": "#f7ecdf",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#e2dfde",
+                        "inverse-on-surface": "#faefe2",
+                        "on-error": "#ffffff",
+                        "status-error": "#991B1B",
+                        "on-primary-fixed": "#271900",
+                        "tertiary-fixed-dim": "#a1c9ff",
+                        "on-primary-container": "#fffbff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#004880",
+                        "on-background": "#201b13",
+                        "surface-container-low": "#fdf2e5",
+                        "status-success": "#065F46",
+                        "primary-container": "#986d00",
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed": "#001c37"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "number-xl": ["Plus Jakarta Sans"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Inter"]
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "40px",
+                        "gutter": "24px"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface-warm-gray text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-20 bg-surface/80 dark:bg-surface-ink/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm">
+<div class="flex items-center gap-8">
+<span class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed">君册财税</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant dark:text-secondary-fixed-dim font-label-md text-label-md hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">场景覆盖</a>
+<a class="text-primary dark:text-primary-fixed font-bold border-b-2 border-primary pb-1 font-label-md text-label-md" href="#">诊断流程</a>
+<a class="text-on-surface-variant dark:text-secondary-fixed-dim font-label-md text-label-md hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">后续服务</a>
+</nav>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md text-label-md font-bold transition-all hover:shadow-lg active:scale-95 duration-200">
+            开始诊断
+        </button>
+</header>
+<main class="pt-24 pb-32 px-margin-desktop max-w-container-max mx-auto">
+<!-- Breadcrumb / Header -->
+<div class="mb-10 animate-fade-in-up">
+<div class="flex items-center gap-2 text-on-secondary-fixed-variant mb-2">
+<span class="font-label-md text-label-md">步骤 02</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="font-label-md text-label-md opacity-60">上传资产资料</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">财务健康诊断</h1>
+<p class="text-on-surface-variant max-w-2xl mt-2 font-body-md text-body-md">请提供以下证明文件，以便我们的 AI 生成全面的机构级报告。所有数据均经过加密处理，并具备银行级安全保障。</p>
+</div>
+<div class="flex flex-col lg:flex-row gap-8 items-start">
+<!-- Left Pane: Document List (60%) -->
+<section class="w-full lg:w-[60%] space-y-4">
+<div class="flex items-center justify-between px-4 pb-2 border-b border-outline-variant/30 animate-fade-in-up delay-100">
+<span class="font-label-md text-label-md text-on-surface-variant">所需文件</span>
+<span class="font-label-md text-label-md text-primary">已上传 3 / 8</span>
+</div>
+<!-- Document Item 1 -->
+<div class="glass-card p-5 rounded-xl flex items-center gap-6 group hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300 animate-fade-in-up delay-100">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[28px]">description</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-md text-[18px] text-on-surface">纳税记录 (2023 财年)</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">必填</span>
+</div>
+<p class="text-on-secondary-container font-body-md text-[14px]">最近一个财年的完整联邦及州税务申报文件。</p>
+</div>
+<div class="flex flex-col items-end gap-2">
+<button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md font-bold transition-transform hover:scale-105 active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+                            上传
+                        </button>
+<span class="text-[12px] text-on-secondary-fixed-variant font-label-md">支持 PDF, XLSX, 最大 25MB</span>
+</div>
+</div>
+<!-- Document Item 2 (Uploaded State) -->
+<div class="glass-card p-5 rounded-xl flex items-center gap-6 border-l-4 border-l-status-success hover:-translate-y-1 hover:shadow-lg transition-all duration-300 animate-fade-in-up delay-200">
+<div class="w-12 h-12 rounded-lg bg-status-success/10 flex items-center justify-center text-status-success">
+<span class="material-symbols-outlined text-[28px]" data-weight="fill">check_circle</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-md text-[18px] text-on-surface">银行流水 (最近 6 个月)</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">必填</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-status-success font-label-md text-[13px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">attachment</span>
+                                Q3_流水账单_最终版.pdf
+                            </span>
+<span class="text-on-secondary-container text-[12px] opacity-60">• 4.2 MB</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors p-2 hover:scale-110" title="删除">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<!-- Document Item 3 -->
+<div class="glass-card p-5 rounded-xl flex items-center gap-6 group hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300 animate-fade-in-up delay-300">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[28px]">receipt_long</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-md text-[18px] text-on-surface">销售发票与应收账款</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-secondary-container text-on-secondary-container border border-outline-variant/30">建议</span>
+</div>
+<p class="text-on-secondary-container font-body-md text-[14px]">详细的未收账款明细，用于评估现金流速率。</p>
+</div>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-label-md font-bold transition-transform hover:scale-105 active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+                        上传
+                    </button>
+</div>
+<!-- Document Item 4 -->
+<div class="glass-card p-5 rounded-xl flex items-center gap-6 group hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300 animate-fade-in-up delay-400">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[28px]">account_balance_wallet</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-md text-[18px] text-on-surface">工资单汇总</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">必填</span>
+</div>
+<p class="text-on-secondary-container font-body-md text-[14px]">按部门划分的累计工资支出，用于效率分析。</p>
+</div>
+<button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md font-bold transition-transform hover:scale-105 active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+                        上传
+                    </button>
+</div>
+<!-- Document Item 5 -->
+<div class="glass-card p-5 rounded-xl flex items-center gap-6 group hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300 animate-fade-in-up delay-500">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[28px]">inventory_2</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-md text-[18px] text-on-surface">固定资产台账</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-secondary-container text-on-secondary-container border border-outline-variant/30">建议</span>
+</div>
+<p class="text-on-secondary-container font-body-md text-[14px]">公司资产清单及折旧计划。</p>
+</div>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-label-md font-bold transition-transform hover:scale-105 active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+                        上传
+                    </button>
+</div>
+<div class="running-border p-6 rounded-2xl flex flex-col items-center justify-center text-center bg-surface-container-lowest/50 hover:bg-surface-container-lowest transition-colors cursor-pointer group animate-fade-in-up delay-600">
+<div class="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</div>
+<span class="font-headline-md text-[16px] text-on-surface">添加自定义财务文件</span>
+<span class="text-on-secondary-container font-body-md text-[14px] mt-1">将任何其他相关文件拖放至此处。</span>
+</div>
+</section>
+<!-- Right Pane: Completeness Dashboard (40%) -->
+<aside class="w-full lg:w-[40%] lg:sticky lg:top-24 space-y-6 animate-fade-in-up delay-200">
+<div class="glass-card p-8 rounded-3xl shadow-xl shadow-surface-ink/5">
+<div class="text-center mb-8">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-1">数据完整度</h2>
+<p class="text-on-secondary-container font-label-md text-label-md">实时诊断准备就绪度</p>
+</div>
+<!-- Large Radial Progress -->
+<div class="relative w-48 h-48 mx-auto mb-10 flex items-center justify-center animate-breathe">
+<svg class="w-full h-full -rotate-90 transform" viewbox="0 0 100 100">
+<circle class="text-surface-container-highest" cx="50" cy="50" fill="transparent" r="42" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary transition-all duration-1000 ease-out" cx="50" cy="50" fill="transparent" r="42" stroke="currentColor" stroke-dasharray="263.89" stroke-dashoffset="163.6" stroke-linecap="round" stroke-width="8" style="stroke-dashoffset: calc(263.89 - (263.89 * 38) / 100);"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-number-xl text-number-xl text-primary">38%</span>
+<span class="font-label-md text-[12px] text-on-secondary-fixed-variant uppercase tracking-widest mt-1">就绪</span>
+</div>
+<!-- Glow effect -->
+<div class="absolute inset-0 bg-primary/15 rounded-full blur-2xl -z-10 animate-pulse-subtle"></div>
+</div>
+<!-- Sub Progress Bars -->
+<div class="space-y-6">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-md text-label-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">trending_up</span> 利润可信度
+                            </span>
+<span class="font-label-md text-label-md text-primary">高</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary progress-bar rounded-full" data-width="85%" style="width: 85%"></div>
+</div>
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-md text-label-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">gpp_maybe</span> 风险评估
+                                </span>
+<span class="font-label-md text-label-md text-on-surface-variant">低</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary progress-bar rounded-full" data-width="20%" style="width: 20%"></div>
+</div>
+</div>
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-md text-label-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">account_balance</span> 现金流洞察
+                                </span>
+<span class="font-label-md text-label-md text-on-surface-variant">部分完成</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary progress-bar rounded-full" data-width="45%" style="width: 45%"></div>
+</div>
+</div>
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-md text-label-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">bolt</span> 效率测绘
+                                </span>
+<span class="font-label-md text-label-md text-on-surface-variant">等待中</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary progress-bar rounded-full" data-width="0%" style="width: 0%"></div>
+</div>
+</div>
+</div>
+<div class="mt-10 p-4 rounded-xl bg-primary/5 border border-primary/10 transition-colors hover:bg-primary/10 cursor-default">
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-primary">info</span>
+<p class="text-[13px] text-on-surface-variant leading-relaxed">
+<span class="font-bold text-primary">洞察:</span> 上传您的 <span class="underline decoration-primary/30">应收账款台账</span> 将提高现金流洞察的可信度 35%。
+                            </p>
+</div>
+</div>
+</div>
+<!-- Secondary Info Card -->
+<div class="glass-card p-6 rounded-2xl flex items-center gap-4 bg-surface-ink text-surface-bright border-none hover:-translate-y-1 transition-transform">
+<div class="w-10 h-10 rounded-full bg-surface-bright/10 flex items-center justify-center text-primary-fixed">
+<span class="material-symbols-outlined">security</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-surface-bright">AES-256 加密保护</h4>
+<p class="text-[12px] text-secondary-fixed-dim">您的财务数据是私密且安全的。</p>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Footer Actions -->
+<div class="fixed bottom-0 left-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-t border-outline-variant/30 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
+<div class="max-w-container-max mx-auto px-margin-desktop py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="flex items-center gap-4 animate-pulse">
+<span class="material-symbols-outlined text-primary animate-spin" style="animation-duration: 3s;">sync</span>
+<span class="font-label-md text-label-md text-on-surface">AI 正在预处理已上传的文件...</span>
+</div>
+<div class="flex items-center gap-4 w-full sm:w-auto">
+<button class="flex-1 sm:flex-none px-8 py-3 rounded-xl font-label-md text-label-md font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">
+                    跳过并进入问卷
+                </button>
+<button class="flex-1 sm:flex-none px-10 py-3 bg-primary text-on-primary rounded-xl font-label-md text-label-md font-extrabold hover:bg-primary-container hover:scale-105 hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2 group">
+                    继续填写问卷
+                    <span class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Minimalist Footer -->
+<footer class="w-full py-12 px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4 bg-surface-warm-gray border-t border-outline-variant/20 mb-32">
+<div class="flex flex-col gap-2">
+<span class="font-headline-md text-headline-md text-primary">珺策金融</span>
+<p class="font-body-md text-body-md text-secondary max-w-sm">© 2024 珺策金融 &amp; 财务 AI。版权所有。适用高风险财务情报免责声明。</p>
+</div>
+<div class="flex gap-8">
+<a class="text-on-secondary-container font-label-md text-label-md hover:text-primary transition-opacity duration-300" href="#">隐私政策</a>
+<a class="text-on-secondary-container font-label-md text-label-md hover:text-primary transition-opacity duration-300" href="#">服务条款</a>
+<a class="text-on-secondary-container font-label-md text-label-md hover:text-primary transition-opacity duration-300" href="#">安全保障</a>
+</div>
+</footer>
+<script>
+        // Progress bar smooth loading animation
+        document.addEventListener("DOMContentLoaded", () => {
+            const bars = document.querySelectorAll('.progress-bar');
+            bars.forEach(bar => {
+                const targetWidth = bar.getAttribute('data-width');
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = targetWidth;
+                }, 300);
+            });
+        });
+
+        // Simple micro-interaction for upload progress simulation
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (this.innerText.includes('上传') || this.innerText.includes('Upload')) {
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span> 处理中...';
+                    this.disabled = true;
+                    setTimeout(() => {
+                        this.innerHTML = '<span class="material-symbols-outlined text-[18px]">check</span> 完成';
+                        this.classList.replace('bg-primary', 'bg-status-success');
+                        this.classList.replace('hover:bg-primary-container', 'hover:bg-status-success/80');
+                    }, 2000);
+                }
+            });
+        });
+    </script>
+</body></html>

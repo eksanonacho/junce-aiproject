@@ -1,12 +1,12 @@
 # PROJECT_STATE_SNAPSHOT.md — AI 初诊项目当前快照
 
-> **最后更新**：2026-06-23（V2 全量重构完成）
+> **最后更新**：2026-06-28（客户侧 Stitch 视觉升级完成）
 
 ---
 
 ## 快照时间
 
-**2026-06-23（V2 企业经营初诊系统 — feature/v2-business-diagnosis）**
+**2026-06-28（V2 企业经营初诊系统 — feature/v2-business-diagnosis）**
 
 ---
 
@@ -28,7 +28,8 @@
 | **V2 Phase 4**：四维经营看板服务（BusinessDashboardService 评分引擎） | ✅ 已完成 `[06-23]` |
 | **V2 Phase 5**：前端基础设施（echarts/vue-echarts/auto-animate/motion + Pinia stores + API层） | ✅ 已完成 `[06-23]` |
 | **V2 Phase 6**：前端客户流程重构（DiagnosisStartPage + DocumentUploadPage + 3组件） + 看板可视化（BusinessDashboard + RadarChart + 2子组件） + ReportPage重写（9段式报告） | ✅ 已完成 `[06-23]` |
-| V2 后续：AI-docs 文档同步 | 🔄 进行中 `[06-23]` |
+| **V2 Phase 7**：客户侧 Stitch 黑金视觉升级（首页/开始/上传/问卷/成功/报告/品牌资产） | ✅ 已完成 `[06-28]` |
+| V2 后续：AI-docs 文档同步 | ✅ 已完成 `[06-28]` |
 | V2 后续：演示案例编写 | ⬜ 未开始 |
 | 部署上线 | ⬜ 未开始 |
 | 小程序数据打通 | ⬜ 未开始（二期） |
@@ -53,6 +54,8 @@
 | 前端 DocumentUploadPage | 双栏：资料清单 + 完整度面板（环形SVG进度） | ✅ |
 | 前端 BusinessDashboard | 综合健康度卡 + ECharts雷达图 + 四维卡片 + 结论 + TOP3 | ✅ |
 | 前端 ReportPage | 9段式重写（PENDING_REVIEW / READY 两态） | ✅ |
+| 前端品牌资产 | 透明印章 + 字标，统一 JcBrand 组件 | ✅ `[06-28]` |
+| 客户侧页面视觉 | 首页、开始初诊、上传、问卷、成功、报告页对齐 Stitch 黑金咨询风格 | ✅ `[06-28]` |
 | 前端 Store | diagnosis.ts (Pinia) + report.ts (Pinia) | ✅ |
 | 前端 API | documents.ts + diagnosis.ts + client.ts 扩展 | ✅ |
 | Build | 后端 `nest build` 通过 + 前端 `vite build` 通过 | ✅ |
@@ -98,7 +101,7 @@
 |------|------|
 | 路由 | 9（V1 7 + V2 2） |
 | 页面 | 9（V1 7 + V2 2） |
-| 组件 | 7（V1 2 + V2 5） |
+| 组件 | 9+（含 V2 报告组件、JcBrand、JcDynamicBackground） |
 | Pinia stores | 2（V2 新增） |
 | API 模块 | 6（V1 4 + V2 2） |
 | npm 依赖 | 16（V1 12 + V2 4） |
@@ -107,17 +110,16 @@
 
 ## 当前正在推进
 
-- **AI-docs 文档同步**：更新 PROJECT_STATE_SNAPSHOT、API_CONTRACT、DATABASE_GUIDE、ROADMAP、README、project-note
+- **浏览器端到端验收**：基于已完成的客户侧黑金视觉版，走通 start → upload → questionnaire → success/report → admin review。
 
 ---
 
 ## 下一步建议
 
-1. 编写 `AI-docs/DEMO_CASES_V2.md`（3 套演示案例）
-2. 浏览器手动走通完整 V2 流程验证
-3. 前端实现 skipLogic hideInModes 按模式过滤题量
-4. ECharts 按需加载优化（减小 ReportPage chunk 1.1MB）
-5. 提交 PR → Code Review → 合并 main
+1. 浏览器手动走通完整 V2 流程验证
+2. 维护 `AI-docs/DEMO_CASES_V2.md`（低/中/高风险演示案例）
+3. ECharts 按需加载优化（减小 ReportPage chunk 1.1MB）
+4. 提交 PR → Code Review → 合并 main
 
 ---
 

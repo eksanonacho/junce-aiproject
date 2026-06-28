@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Junce Financial | 诊断问卷</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d3c4af;
+            border-radius: 10px;
+        }
+        .radio-pulse:checked + label {
+            border-color: #785600;
+            background-color: #fff8f3;
+        }
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .ai-pulse {
+            animation: pulse-soft 3s infinite ease-in-out;
+        }
+        
+        /* New Animations */
+        @keyframes slide-up-fade {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+            animation: slide-up-fade 0.6s ease-out forwards;
+        }
+
+        @keyframes slide-in-right {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-slide-in-right {
+            animation: slide-in-right 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .animation-delay-100 { animation-delay: 100ms; }
+        .animation-delay-200 { animation-delay: 200ms; }
+
+        @keyframes progress-fill {
+            from { width: 0%; }
+            to { width: 35%; }
+        }
+        .animate-progress-fill {
+            animation: progress-fill 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            width: 0;
+        }
+
+        @keyframes ai-glow-pulse {
+            0%, 100% { box-shadow: 0 0 15px 2px rgba(184, 134, 11, 0.05); }
+            50% { box-shadow: 0 0 25px 8px rgba(184, 134, 11, 0.2); }
+        }
+        .ai-glow {
+            animation: ai-glow-pulse 4s infinite ease-in-out;
+        }
+        
+        .nav-link {
+            position: relative;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            background-color: #785600;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#4f4535",
+                        "surface-dim": "#e3d8cc",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#3477bc",
+                        "tertiary": "#085ea2",
+                        "surface-container-highest": "#ece1d4",
+                        "inverse-surface": "#353027",
+                        "on-secondary-container": "#636262",
+                        "secondary": "#5f5e5e",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#f1e7d9",
+                        "background": "#fff8f3",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#201b13",
+                        "tertiary-fixed": "#d2e4ff",
+                        "primary": "#785600",
+                        "inverse-primary": "#f7bd48",
+                        "primary-fixed": "#ffdea6",
+                        "on-primary-fixed-variant": "#5d4200",
+                        "primary-fixed-dim": "#f7bd48",
+                        "secondary-fixed": "#e5e2e1",
+                        "surface": "#fff8f3",
+                        "outline": "#817563",
+                        "surface-ink": "#121212",
+                        "surface-variant": "#ece1d4",
+                        "surface-bright": "#fff8f3",
+                        "surface-warm-gray": "#F9F8F6",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-tertiary-container": "#fdfcff",
+                        "outline-variant": "#d3c4af",
+                        "surface-tint": "#7b5800",
+                        "status-warning": "#D97706",
+                        "surface-container": "#f7ecdf",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#e2dfde",
+                        "inverse-on-surface": "#faefe2",
+                        "on-error": "#ffffff",
+                        "status-error": "#991B1B",
+                        "on-primary-fixed": "#271900",
+                        "tertiary-fixed-dim": "#a1c9ff",
+                        "on-primary-container": "#fffbff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#004880",
+                        "on-background": "#201b13",
+                        "surface-container-low": "#fdf2e5",
+                        "status-success": "#065F46",
+                        "primary-container": "#986d00",
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed": "#001c37"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "number-xl": ["Plus Jakarta Sans"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "number-xl": ["40px", {"lineHeight": "1", "letterSpacing": "-0.03em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-surface-warm-gray text-on-surface font-body-md antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-20 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm">
+<div class="flex items-center gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-primary">君册财税<br/></span>
+<div class="h-6 w-px bg-outline-variant/50 mx-4 hidden md:block"></div>
+<span class="hidden md:block font-label-md text-label-md text-on-surface-variant tracking-wider uppercase">战略诊断引擎</span>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden lg:flex gap-8">
+<a class="nav-link font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">文档中心</a>
+<a class="nav-link font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">技术支持</a>
+</nav>
+<button class="bg-primary hover:bg-primary-container text-white px-6 py-2.5 rounded-xl font-label-md transition-all active:scale-95 shadow-sm">
+                保存并退出
+            </button>
+</div>
+</header>
+<main class="pt-32 pb-40 px-margin-desktop max-w-[1440px] mx-auto min-h-screen">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
+<!-- Left & Center: Question Area -->
+<div class="lg:col-span-8 space-y-8 animate-slide-up">
+<!-- Active Section Header -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-3">
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-md text-[12px] tracking-widest uppercase">阶段 02</span>
+<span class="h-1 w-1 rounded-full bg-outline-variant"></span>
+<span class="font-label-md text-on-surface-variant">第 14 题，共 40 题</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">财务健康与稳定性</h1>
+</div>
+<!-- Immersive Question Card -->
+<div class="glass-card p-8 md:p-12 rounded-[24px] border border-outline-variant/20 shadow-xl shadow-surface-ink/5 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-2 h-full bg-primary"></div>
+<div class="space-y-10">
+<!-- Question Text -->
+<div class="space-y-4">
+<h2 class="font-headline-md text-headline-md text-on-surface leading-snug">
+                                以下哪项最能描述您组织目前对资产负债率（债务权益比）的管理方式？
+                            </h2>
+<p class="text-on-surface-variant font-body-md opacity-80">请选择最符合您第三季度财务政策的选项。</p>
+</div>
+<!-- Options: Radio Group -->
+<div class="grid grid-cols-1 gap-4">
+<div class="relative">
+<input class="peer hidden radio-pulse" id="opt1" name="debt_ratio" type="radio"/>
+<label class="flex items-center p-6 rounded-2xl border border-outline-variant/40 bg-white/50 hover:bg-white hover:border-primary hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group" for="opt1">
+<span class="w-6 h-6 rounded-full border-2 border-outline-variant group-hover:border-primary flex items-center justify-center mr-4 transition-colors">
+<span class="w-3 h-3 rounded-full bg-primary scale-0 peer-checked:scale-100 transition-transform"></span>
+</span>
+<span class="font-body-lg text-body-lg text-on-surface">主动去杠杆，目标比例控制在 1.5 倍以下</span>
+</label>
+<span class="material-symbols-outlined absolute right-6 top-1/2 -translate-y-1/2 text-primary opacity-0 peer-checked:opacity-100 transition-opacity">check_circle</span>
+</div>
+<div class="relative">
+<input class="peer hidden radio-pulse" id="opt2" name="debt_ratio" type="radio"/>
+<label class="flex items-center p-6 rounded-2xl border border-outline-variant/40 bg-white/50 hover:bg-white hover:border-primary hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group" for="opt2">
+<span class="w-6 h-6 rounded-full border-2 border-outline-variant group-hover:border-primary flex items-center justify-center mr-4 transition-colors">
+<span class="w-3 h-3 rounded-full bg-primary scale-0 peer-checked:scale-100 transition-transform"></span>
+</span>
+<span class="font-body-lg text-body-lg text-on-surface">保持机会性杠杆，以进行战略性收购</span>
+</label>
+<span class="material-symbols-outlined absolute right-6 top-1/2 -translate-y-1/2 text-primary opacity-0 peer-checked:opacity-100 transition-opacity">check_circle</span>
+</div>
+<div class="relative">
+<input class="peer hidden radio-pulse" id="opt3" name="debt_ratio" type="radio"/>
+<label class="flex items-center p-6 rounded-2xl border border-outline-variant/40 bg-white/50 hover:bg-white hover:border-primary hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group" for="opt3">
+<span class="w-6 h-6 rounded-full border-2 border-outline-variant group-hover:border-primary flex items-center justify-center mr-4 transition-colors">
+<span class="w-3 h-3 rounded-full bg-primary scale-0 peer-checked:scale-100 transition-transform"></span>
+</span>
+<span class="font-body-lg text-body-lg text-on-surface">仅进行最低限度监控；专注于核心营收增长</span>
+</label>
+<span class="material-symbols-outlined absolute right-6 top-1/2 -translate-y-1/2 text-primary opacity-0 peer-checked:opacity-100 transition-opacity">check_circle</span>
+</div>
+</div>
+<!-- Secondary Input Example: Text Area -->
+<div class="pt-6 border-t border-outline-variant/20 space-y-4">
+<label class="block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">补充说明（选填）</label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl p-4 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40" placeholder="请提及有关您资本结构的任何特定行业细微差别..." rows="4"></textarea>
+</div>
+</div>
+</div>
+<!-- Navigation Controls -->
+<div class="flex justify-between items-center px-4">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
+<span class="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
+<span class="font-label-md">上一题</span>
+</button>
+<button class="flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-xl hover:bg-primary-container transition-all group shadow-md active:scale-95">
+<span class="font-label-md">继续</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Right Sidebar: Diagnosis Progress -->
+<aside class="lg:col-span-4 sticky top-28 space-y-6">
+<div class="glass-card rounded-[24px] border border-outline-variant/20 p-6 shadow-lg animate-slide-in-right animation-delay-100">
+<div class="space-y-6">
+<div class="flex justify-between items-end">
+<div class="space-y-1">
+<h3 class="font-headline-md text-headline-md text-on-surface">诊断进度</h3>
+<p class="font-label-md text-on-surface-variant">2024 年度机构评估</p>
+</div>
+<div class="text-right">
+<span class="font-number-xl text-number-xl text-primary leading-none">35%</span>
+<p class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">已完成</p>
+</div>
+</div>
+<!-- Dynamic Progress Bar -->
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-fixed-dim rounded-full transition-all duration-700 ease-out animate-progress-fill"></div>
+</div>
+<!-- Categories List -->
+<div class="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+<div class="flex items-center justify-between p-4 rounded-xl bg-status-success/5 border border-status-success/10 group transition-all">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-status-success" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-md text-on-surface">主体结构</span>
+</div>
+<span class="text-[10px] text-status-success font-bold">100%</span>
+</div>
+<div class="flex items-center justify-between p-4 rounded-xl bg-white border border-primary/30 shadow-sm shadow-primary/5">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 flex items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-bold">02</span>
+<span class="font-label-md text-on-surface font-bold">财务健康</span>
+</div>
+<span class="ai-pulse flex items-center">
+<span class="w-1.5 h-1.5 rounded-full bg-primary mr-2"></span>
+<span class="text-[10px] text-primary font-bold">进行中</span>
+</span>
+</div>
+<div class="flex items-center justify-between p-4 rounded-xl bg-white/40 border border-outline-variant/10 opacity-70">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 flex items-center justify-center rounded-full bg-outline-variant/20 text-on-surface-variant text-[10px] font-bold">03</span>
+<span class="font-label-md text-on-surface-variant">税务风险</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">lock</span>
+</div>
+<div class="flex items-center justify-between p-4 rounded-xl bg-white/40 border border-outline-variant/10 opacity-70">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 flex items-center justify-center rounded-full bg-outline-variant/20 text-on-surface-variant text-[10px] font-bold">04</span>
+<span class="font-label-md text-on-surface-variant">资产配置</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">lock</span>
+</div>
+<div class="flex items-center justify-between p-4 rounded-xl bg-white/40 border border-outline-variant/10 opacity-70">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 flex items-center justify-center rounded-full bg-outline-variant/20 text-on-surface-variant text-[10px] font-bold">05</span>
+<span class="font-label-md text-on-surface-variant">风险管理</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">lock</span>
+</div>
+<div class="flex items-center justify-between p-4 rounded-xl bg-white/40 border border-outline-variant/10 opacity-70">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 flex items-center justify-center rounded-full bg-outline-variant/20 text-on-surface-variant text-[10px] font-bold">06</span>
+<span class="font-label-md text-on-surface-variant">财富传承</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">lock</span>
+</div>
+<div class="flex items-center justify-between p-4 rounded-xl bg-white/40 border border-outline-variant/10 opacity-70">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 flex items-center justify-center rounded-full bg-outline-variant/20 text-on-surface-variant text-[10px] font-bold">07</span>
+<span class="font-label-md text-on-surface-variant">治理体系</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">lock</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Advisor Context Card -->
+<div class="bg-surface-ink text-white p-6 rounded-[24px] space-y-4 animate-slide-in-right animation-delay-200 ai-glow">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary-fixed-dim flex items-center justify-center shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-white text-[20px]">smart_toy</span>
+</div>
+<div>
+<p class="font-label-md text-[11px] text-primary-fixed-dim uppercase tracking-widest">AI 财务分析师</p>
+<p class="font-headline-md text-[16px]">洞察生成中...</p>
+</div>
+</div>
+<p class="font-body-md text-[14px] text-white/70 leading-relaxed italic">
+                        “您对债务比率的回答将显著影响最终智能报告中的‘风险敏感度’和‘流动性’章节。”
+                    </p>
+</div>
+</aside>
+</div>
+</main>
+<!-- Sticky Bottom Bar -->
+<footer class="fixed bottom-0 left-0 w-full z-50 bg-surface/90 backdrop-blur-2xl border-t border-outline-variant/30 px-margin-desktop py-6">
+<div class="max-w-[1440px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-8">
+<div class="flex -space-x-3">
+<div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[18px]">security</span>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[18px]">encrypted</span>
+</div>
+</div>
+<div class="space-y-0.5">
+<p class="font-label-md text-[13px] text-on-surface leading-none">机构级安全保护</p>
+<p class="font-body-md text-[12px] text-on-surface-variant">256 位 AES 加密已激活</p>
+</div>
+</div>
+<div class="flex items-center gap-4 w-full md:w-auto">
+<p class="hidden xl:block font-label-md text-on-surface-variant max-w-[300px] text-right">
+                    完成诊断后即可生成一份 30 页的机构级智能情报报告。
+                </p>
+<button class="w-full md:w-auto px-10 py-4 bg-outline-variant/40 text-on-surface/40 cursor-not-allowed rounded-xl font-headline-md text-[16px] transition-all flex items-center justify-center gap-3" disabled="">
+                    提交并生成报告
+                    <span class="material-symbols-outlined">analytics</span>
+</button>
+</div>
+</div>
+</footer>
+<!-- Minimal Footer Links -->
+<div class="bg-surface-warm-gray py-12 px-margin-desktop border-t border-outline-variant/20 flex flex-col items-center justify-center gap-6">
+<div class="flex gap-12">
+<a class="text-on-secondary-fixed-variant font-label-md hover:text-primary transition-colors nav-link" href="#">隐私政策</a>
+<a class="text-on-secondary-fixed-variant font-label-md hover:text-primary transition-colors nav-link" href="#">服务条款</a>
+<a class="text-on-secondary-fixed-variant font-label-md hover:text-primary transition-colors nav-link" href="#">数据安全</a>
+</div>
+<p class="text-center font-body-md text-[12px] text-on-secondary-fixed-variant/60 max-w-2xl">
+            © 2024 Junce Financial &amp; Tax AI. 保留所有权利。适用高风险财务情报免责声明。所提供的诊断仅用于战略规划目的，不构成正式的法律或税务建议。
+        </p>
+</div>
+<script>
+        // Simple logic for highlighting steps or simple card interactions
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                // Potential logic to move to next question automatically or enable 'Continue'
+                console.log('Selected:', e.target.id);
+            });
+        });
+    </script>
+</body></html>

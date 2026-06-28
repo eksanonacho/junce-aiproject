@@ -10,7 +10,7 @@
           <p class="font-medium text-slate-900">{{ a.title }}</p>
           <p class="text-sm text-slate-500 mt-0.5">{{ a.reason }}</p>
           <div class="flex items-center gap-2 mt-1.5 text-xs">
-            <span class="px-2 py-0.5 bg-amber-50 text-amber-700 rounded">⏱ {{ a.timeline }}</span>
+            <span class="px-2 py-0.5 bg-amber-50 text-amber-700 rounded">时间 {{ a.timeline }}</span>
             <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded">{{ a.serviceType }}</span>
           </div>
         </div>
